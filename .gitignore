@@ -27,3 +27,12 @@ lalsuite-user-env.fish
 lalsuite-user-env.sh
 lalsuite-user-env.shell
 tags
+
+# Added by ADACS branch to 
+# support development on OSX
+# with CLion
+CMakeLists.txt
+.idea
+*.DS_Store
+CMakeLists.txt
+cmake-build-*
