@@ -70,6 +70,9 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
+# Add CUDA as a conditional
+LALSUITE_WITH_CUDA
+
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
 
@@ -123,9 +126,6 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for OpenMP
 LALSUITE_ENABLE_OPENMP
-
-# Add CUDA as a conditional
-LALSUITE_WITH_CUDA
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])

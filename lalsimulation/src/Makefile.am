@@ -86,8 +86,6 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_WFF2.dat \
 	LALSimNeutronStarEOS_WFF3.dat
 
-LDADD = liblalsimulation.la
-
 bin_PROGRAMS = \
 	lalsim-bh-qnmode \
 	lalsim-bh-ringdown \
@@ -266,14 +264,46 @@ liblalsimulation_la_SOURCES = \
 	LALSimFindAttachTime.c \
 	LALSimIMRNRSur4d2s.c \
 	LALSimIMRNRSur7dq2.c \
-	LALSimUniversalRelations.c
+	LALSimUniversalRelations.c \
+	$(END_OF_LIST)
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \
 	LALSimulationVCSInfo.c \
 	$(END_OF_LIST)
 
+if CUDA
+SIMCXXSRC =
+SIMCXXGENSRC = LALSimIMRPhenomP_cuda.cpp
+SIMLIBCXX = liblalsimulationcxx.la
+else
+SIMCXXSRC =
+SIMCXXGENSRC = 
+SIMLIBCXX = 
+endif
+
+noinst_LTLIBRARIES = $(SIMLIBCXX)
+liblalsimulationcxx_la_SOURCES = $(SIMCXXSRC)
+nodist_liblalsimulationcxx_la_SOURCES = $(SIMCXXGENSRC)
+liblalsimulation_la_LIBADD = $(SIMLIBCXX)
+
 liblalsimulation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
+
+CLEANFILES = \
+	LALSimIMRPhenomP_cuda.cpp
+
+DISTCLEANFILES = config.h
+
+vcs_build_info_source = LALSimulationVCSInfo.c
+vcs_info_sources = LALSimulationVCSInfoHeader.h
+build_info_source = LALSimulationBuildInfoHeader.h
+build_info_dependencies = $(liblalsimulation_la_DEPENDENCIES)
+
+LDADD = liblalsimulation.la
+
+TESTS = \
+	lalsimulation_version \
+	$(END_OF_LIST)
 
 lalsim_bh_qnmode_SOURCES = bh_qnmode.c
 lalsim_bh_sphwf_SOURCES = bh_sphwf.c
@@ -306,32 +336,5 @@ EXTRA_DIST = \
 	$(NOISEPSDFILES) \
 	$(EOSDATAFILES)
 
-DISTCLEANFILES = config.h
 
-vcs_build_info_source = LALSimulationVCSInfo.c
-vcs_info_sources = LALSimulationVCSInfoHeader.h
-build_info_source = LALSimulationBuildInfoHeader.h
-build_info_dependencies = $(liblalsimulation_la_DEPENDENCIES)
-
-if CUDA
-SIMCXXSRC =
-SIMCXXGENSRC = LALSimIMRPhenomP_cuda.cpp
-SIMLIBCXX = liblalsimcxx.la
-else
-SIMCXXSRC =
-SIMCXXGENSRC = 
-SIMLIBCXX = 
-endif
-
-noinst_LTLIBRARIES = $(SIMLIBCXX)
-liblalsimcxx_la_SOURCES = $(SIMCXXSRC)
-nodist_liblalsimcxx_la_SOURCES = $(SIMCXXGENSRC)
-liblalsim_la_LIBADD = $(SIMLIBCXX)
-
-CLEANFILES = \
-	LALSimIMRPhenomP_cuda.cpp
-
-TESTS = \
-	lalsimulation_version \
-	$(END_OF_LIST)
 
