@@ -124,6 +124,9 @@ AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 # check for OpenMP
 LALSUITE_ENABLE_OPENMP
 
+# Add CUDA as a conditional
+LALSUITE_WITH_CUDA
+
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
@@ -144,6 +147,11 @@ LALSUITE_USE_SWIG
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
+
+# define if CUDA is enabled
+if test "${cuda}" = "true"; then
+  AC_DEFINE([LALSIMUMALTION_CUDA_ENABLED],[1],[Define if using cuda library])
+fi
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
@@ -170,6 +178,7 @@ AC_MSG_NOTICE([
 LALSimulation has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
+* CUDA support is $CUDA_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL
@@ -184,3 +193,5 @@ Now run 'make' to build LALSimulation,
 and run 'make install' to install LALSimulation.
 ==================================================
 ])
+
+

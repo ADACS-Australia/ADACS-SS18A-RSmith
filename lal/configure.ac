@@ -311,6 +311,7 @@ m4_popdef([includes])
 # set automake conditionals
 AM_CONDITIONAL([INTELFFT],[test x$intelfft = xtrue])
 AM_CONDITIONAL([QTHREAD],[test x$qthread = xtrue])
+AM_CONDITIONAL([CUDA], [test x$cuda = xtrue])
 
 # check for boinc --- must happen after all compiler checks are done
 LALSUITE_CHECK_BOINC

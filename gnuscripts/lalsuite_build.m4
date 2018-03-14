@@ -1040,9 +1040,17 @@ AC_ARG_WITH(
   ],[
     cuda=false
   ])
+  # Setting the prefix to the default if only --with-cuda was given
+  if test "$cuda_path" == "yes"; then
+  	if test "$cuda" == "yes"; then
+  		cuda_prefix="/usr/local/cuda"
+    else
+  		cuda_prefix=""
+  	fi
+  fi
   AS_IF([test "${cuda}" = true],[
     LALSUITE_REQUIRE_CXX
-    AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
+    AC_MSG_NOTICE([Using ${cuda_path} as CUDA path])
     AS_CASE([$build_os],
       [linux*],[
         AS_IF([test "x$build_cpu" = "xx86_64"],[
@@ -1054,7 +1062,7 @@ AC_ARG_WITH(
       [cuda_libdir=lib]
     )
     CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -Wl,-rpath -Wl,${cuda_path}/${cuda_libdir} -lcufft -lcudart"
-    CUDA_CFLAGS="-I${with_cuda}/include"
+    CUDA_CFLAGS="-I${cuda_path}/include"
     LALSUITE_ADD_FLAGS([C],${CUDA_CFLAGS},${CUDA_LIBS})
     AC_SUBST(CUDA_LIBS)
     AC_SUBST(CUDA_CFLAGS)
@@ -1063,9 +1071,33 @@ AC_ARG_WITH(
       AC_MSG_ERROR([could not find 'nvcc' in path])
     ])
   ])
+  AM_CONDITIONAL([CUDA],[test "x${cuda}" != xfalse])
+  AM_COND_IF([CUDA],[
+    CUDA_ENABLE_VAL=ENABLED
+  ],[
+    CUDA_ENABLE_VAL=DISABLED
+  ])
   LALSUITE_ENABLE_MODULE([CUDA])
 ])
 
+
+AC_DEFUN([LALSUITE_CHECK_CUDA],
+    [AC_MSG_CHECKING([whether LAL has been compiled with CUDA support])
+    AC_TRY_RUN([
+    #include <lal/LALConfig.h>
+    #ifdef LAL_CUDA_ENABLED
+    int main( void ) { return 0; }
+    #else
+    int main( void ) { return 1; }
+    #endif
+    ],
+    AC_MSG_RESULT([yes])
+    [cuda=true],
+    AC_MSG_RESULT([no])
+    [cuda=false],
+    AC_MSG_RESULT([unknown])
+    [cuda=false])
+])
 
 AC_DEFUN([LALSUITE_CHECK_GSL_VERSION],[
   # $0: check for GSL version
@@ -1155,24 +1187,6 @@ AC_DEFUN([LALSUITE_WITH_NVCC_CFLAGS],
   [nvcc_cflags],
   AC_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
   AS_IF([test -n "${with_nvcc_cflags}"],[NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}"]),)
-])
-
-AC_DEFUN([LALSUITE_CHECK_CUDA],
-[AC_MSG_CHECKING([whether LAL has been compiled with CUDA support])
-AC_TRY_RUN([
-#include <lal/LALConfig.h>
-#ifdef LAL_CUDA_ENABLED
-int main( void ) { return 0; }
-#else
-int main( void ) { return 1; }
-#endif
-],
-AC_MSG_RESULT([yes])
-[cuda=true],
-AC_MSG_RESULT([no])
-[cuda=false],
-AC_MSG_RESULT([unknown])
-[cuda=false])
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_DOXYGEN],[

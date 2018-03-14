@@ -3,6 +3,7 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
 
 SUBDIRS = \
 	mathematica_codes \
@@ -105,6 +106,7 @@ bin_PROGRAMS = \
 	$(END_OF_LIST)
 
 pkginclude_HEADERS = \
+	LALSimIMRPhenomP_cuda.h \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
 	LALSimIMR.h \
@@ -241,7 +243,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralTaylorLength.c \
 	LALSimInspiralWaveformCache.c \
 	LALSimInspiralWaveformTaper.c \
-  LALSimInspiralTEOBResumROM.c \
+	LALSimInspiralTEOBResumROM.c \
 	LALSimIMRNRWaveforms.c \
 	LALSimulation.c \
 	LALSimNeutronStarEOS.c \
@@ -311,6 +313,25 @@ vcs_info_sources = LALSimulationVCSInfoHeader.h
 build_info_source = LALSimulationBuildInfoHeader.h
 build_info_dependencies = $(liblalsimulation_la_DEPENDENCIES)
 
+if CUDA
+SIMCXXSRC =
+SIMCXXGENSRC = LALSimIMRPhenomP_cuda.cpp
+SIMLIBCXX = liblalsimcxx.la
+else
+SIMCXXSRC =
+SIMCXXGENSRC = 
+SIMLIBCXX = 
+endif
+
+noinst_LTLIBRARIES = $(SIMLIBCXX)
+liblalsimcxx_la_SOURCES = $(SIMCXXSRC)
+nodist_liblalsimcxx_la_SOURCES = $(SIMCXXGENSRC)
+liblalsim_la_LIBADD = $(SIMLIBCXX)
+
+CLEANFILES = \
+	LALSimIMRPhenomP_cuda.cpp
+
 TESTS = \
 	lalsimulation_version \
 	$(END_OF_LIST)
+

@@ -16,4 +16,7 @@
 /* LALFrame Version Devel Number  */
 #undef LALSIMULATION_VERSION_DEVEL
 
+/* Define if using CUDA library */
+#undef LALINSPIRAL_CUDA_ENABLED
+
 #endif /* LALSIMULATION_VERSION */
