@@ -335,6 +335,3 @@ EXTRA_DIST = \
 	lalsimulation_inject.svg \
 	$(NOISEPSDFILES) \
 	$(EOSDATAFILES)
-
-
-
