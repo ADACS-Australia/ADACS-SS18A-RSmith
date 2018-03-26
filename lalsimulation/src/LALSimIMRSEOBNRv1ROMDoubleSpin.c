@@ -158,8 +158,8 @@ static size_t NextPow2(const size_t n);
 static void SplineData_Destroy(SplineData *splinedata);
 static void SplineData_Init(SplineData **splinedata);
 
-static int read_vector(const char dir[], const char fname[], gsl_vector *v);
-static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
+//static int read_vector(const char dir[], const char fname[], gsl_vector *v);
+//static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
 
 static int load_data(const char dir[], gsl_vector *cvec_amp, gsl_vector *cvec_phi, gsl_matrix *Bamp, gsl_matrix *Bphi, gsl_vector *cvec_amp_pre);
 

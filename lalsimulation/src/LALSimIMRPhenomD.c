@@ -20,9 +20,9 @@
 
 #include <math.h>
 #include <gsl/gsl_math.h>
-#include "LALSimIMRPhenomD_internals.c"
 #include <lal/Sequence.h>
-UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
+#include "LALSimIMRPhenomD_internals.h"
+UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.h
 
 #ifndef _OPENMP
 #define omp ignore
@@ -33,7 +33,7 @@ UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.c
  *
  */
 
-static int IMRPhenomDGenerateFD(
+int IMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8Sequence *freqs_in,     /**< Frequency points at which to evaluate the waveform (Hz) */
     double deltaF,                     /**< If deltaF > 0, the frequency points given in freqs are uniformly spaced with
@@ -245,7 +245,7 @@ int XLALSimIMRPhenomDFrequencySequence(
 /* given coefficients */
 /* *********************************************************************************/
 
-static int IMRPhenomDGenerateFD(
+int IMRPhenomDGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< [out] FD waveform */
     const REAL8Sequence *freqs_in,     /**< Frequency points at which to evaluate the waveform (Hz) */
     double deltaF,                     /* If deltaF > 0, the frequency points given in freqs are uniformly spaced with
@@ -476,7 +476,7 @@ double XLALIMRPhenomDGetPeakFreq(
 
 
 // protoype
-static double PhenDPhaseDerivFrequencyPoint(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
+double PhenDPhaseDerivFrequencyPoint(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
 
 /**
  * Helper function to return the value of the frequency derivative of the
@@ -485,7 +485,7 @@ static double PhenDPhaseDerivFrequencyPoint(double Mf, IMRPhenomDPhaseCoefficien
  * when estimating the length of the time domain version of the waveform.
  * unreviewed
  */
-static double PhenDPhaseDerivFrequencyPoint(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn)
+double PhenDPhaseDerivFrequencyPoint(double Mf, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn)
 {
 
   // split the calculation to just 1 of 3 possible mutually exclusive ranges
@@ -665,14 +665,14 @@ double XLALSimIMRPhenomDFinalSpin(
 // Taken from LALSimIMRPhenomP.c
 // This function determines whether x and y are approximately equal to a relative accuracy epsilon.
 // Note that x and y are compared to relative accuracy, so this function is not suitable for testing whether a value is approximately zero.
-static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon) {
+bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon) {
   return !gsl_fcmp(x, y, epsilon);
 }
 
 // If x and X are approximately equal to relative accuracy epsilon then set x = X.
 // If X = 0 then use an absolute comparison.
 // Taken from LALSimIMRPhenomP.c
-static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
+void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
   if (X != 0.0) {
     if (approximately_equal(*x, X, epsilon)) {
       XLAL_PRINT_INFO("Nudging value %.15g to %.15g\n", *x, X);

@@ -16,14 +16,15 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
-
+#define _MAIN
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <lal/LALConstants.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALSimNeutronStar.h>
+
+#include "LALSimIMRPhenomD.h"#include <lal/LALSimNeutronStar.h>
 
 int usage(const char *program);
 int parseargs(int argc, char *argv[]);

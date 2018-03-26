@@ -104,10 +104,11 @@ bin_PROGRAMS = \
 	$(END_OF_LIST)
 
 pkginclude_HEADERS = \
-	LALSimIMRPhenomP_cuda.h \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
 	LALSimIMR.h \
+	LALSimIMRPhenomC_internals.h \
+	LALSimIMRPhenomD_internals.h \
 	LALSimInspiral.h \
 	LALSimInspiralPrecess.h \
 	LALSimInspiralTestGRParams.h \
@@ -149,13 +150,7 @@ noinst_HEADERS = \
 	LALSimIMREOBNRv2.h \
 	LALSimIMREOBNRv2HMROMUtilities.c \
 	LALSimIMREOBNewtonianMultipole.c \
-	LALSimIMRPhenomC_internals.c \
-	LALSimIMRPhenomC_internals.h \
 	LALSimIMRPhenomD.h \
-	LALSimIMRPhenomD_internals.c \
-	LALSimIMRPhenomD_internals.h \
-	LALSimIMRPhenomP.c \
-	LALSimIMRPhenomP.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
@@ -209,10 +204,12 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMREOBNRv2HMROM.c \
 	LALSimIMRLackeyTidal2013.c \
 	LALSimIMRPhenom.c \
+	LALSimIMRPhenomP.c \
 	LALSimIMRPhenomC.c \
 	LALSimIMRPhenomD.c \
+	LALSimIMRPhenomC_internals.c \
+	LALSimIMRPhenomD_internals.c \
 	LALSimIMRPhenomD_NRTidal.c \
-	LALSimIMRPhenomP.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimPhenSpinRingDown.c \
 	LALSimInspiralWaveformFlags.c \
@@ -273,13 +270,13 @@ nodist_liblalsimulation_la_SOURCES = \
 	$(END_OF_LIST)
 
 if CUDA
-SIMCXXSRC =
+SIMCXXSRC = 
 SIMCXXGENSRC = LALSimIMRPhenomP_cuda.cpp
 SIMLIBCXX = liblalsimulationcxx.la
 else
 SIMCXXSRC =
 SIMCXXGENSRC = 
-SIMLIBCXX = 
+SIMLIBCXX =
 endif
 
 noinst_LTLIBRARIES = $(SIMLIBCXX)
@@ -289,8 +286,7 @@ liblalsimulation_la_LIBADD = $(SIMLIBCXX)
 
 liblalsimulation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
 
-CLEANFILES = \
-	LALSimIMRPhenomP_cuda.cpp
+CLEANFILES = $(SIMCXXGENSRC)
 
 DISTCLEANFILES = config.h
 

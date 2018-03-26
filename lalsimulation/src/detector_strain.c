@@ -115,7 +115,7 @@
  * oriented); the GPS arrival time is now at the detector location.
  */
 
-
+#define _MAIN
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
@@ -132,7 +132,8 @@
 #include <lal/Date.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
-#include <lal/LALSimulation.h>
+
+#include "LALSimIMRPhenomD.h"#include <lal/LALSimulation.h>
 
 #define INVALID_EPOCH { .gpsSeconds = LAL_INT4_MAX, .gpsNanoSeconds = LAL_INT4_MAX }
 

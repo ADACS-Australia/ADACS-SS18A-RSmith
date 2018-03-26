@@ -16,7 +16,6 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-
 #include <complex.h>
 #include <math.h>
 #include <string.h>
@@ -32,6 +31,8 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/LALSimNoise.h>
+
+#include "LALSimIMRPhenomD.h"
 
 
 /* 
@@ -206,6 +207,7 @@ int XLALSimNoise(
  */
 
 #if 0
+#define _MAIN
 
 /* Example routine listed in documentation. */
 void mkligodata(void)

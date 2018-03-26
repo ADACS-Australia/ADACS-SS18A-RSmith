@@ -16,7 +16,6 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
-
 #include <math.h>
 
 #include <gsl/gsl_const.h>
@@ -40,6 +39,8 @@
 #else
 #define UNUSED
 #endif
+
+#include "LALSimIMRPhenomD.h"
 
 /* v at isco */
 #define LALSIMINSPIRAL_T1_VISCO 1.L/sqrt(6.L)
@@ -667,6 +668,7 @@ int XLALSimInspiralTaylorT1PNRestricted(
 /** @} */
 
 #if 0
+#define _MAIN
 #include <lal/PrintFTSeries.h>
 #include <lal/PrintFTSeries.h>
 int main(void)

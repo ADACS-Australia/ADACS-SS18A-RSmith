@@ -16,7 +16,6 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-
 #include <math.h>
 #include <stdio.h>
 
@@ -27,6 +26,8 @@
 #include <lal/Units.h>
 #include <lal/LALSimReadData.h>
 #include <lal/LALSimNoise.h>
+
+#include "LALSimIMRPhenomD.h"
 
 // PSD units
 static LALUnit strainSquaredPerHertzUnit = { 0, { 0, 0, 1, 0, 0, 2, 0}, { 0, 0, 0, 0, 0, 0, 0} };
@@ -1536,7 +1537,7 @@ int XLALSimNoisePSDKAGRADesignSensitivityT1600593(
  */
 
 #if 0
-
+#define _MAIN
 /*
  * This test produces plot data that should be similar to the theoretical noise
  * component curves for shot, seismic, suspension thermal, and mirror thermal

@@ -42,10 +42,10 @@
 /* ************************** PhenomP internal function prototypes *****************************/
 /* atan2 wrapper that returns 0 when both magnitudes of x and y are below tol, otherwise it returns
    atan2(x, y) */
-static REAL8 atan2tol(REAL8 x, REAL8 y, REAL8 tol);
+REAL8 atan2tol(REAL8 x, REAL8 y, REAL8 tol);
 
 /* PhenomC parameters for modified ringdown: Uses final spin formula of Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009 */
-static BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
+BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
   const REAL8 m1,   /**< Mass of companion 1 (solar masses) */
   const REAL8 m2,   /**< Mass of companion 2 (solar masses) */
   const REAL8 chi,  /**< Reduced aligned spin of the binary chi = (m1*chi1 + m2*chi2)/M */
@@ -67,7 +67,7 @@ typedef struct tagNNLOanglecoeffs {
     REAL8 epsiloncoeff5; /* Coefficient of omega^(1/3)  in epsilonNNLO */
 } NNLOanglecoeffs;
 
-static void ComputeNNLOanglecoeffs(
+void ComputeNNLOanglecoeffs(
   NNLOanglecoeffs *angcoeffs,  /**< Output: Structure to store results */
   const REAL8 q,               /**< Mass-ratio (convention q>1) */
   const REAL8 chil,            /**< Dimensionless aligned spin of the largest BH */
@@ -79,7 +79,7 @@ typedef struct tagSpinWeightedSphericalHarmonic_l2 {
 } SpinWeightedSphericalHarmonic_l2;
 
 /* Internal core function to calculate PhenomP polarizations for a sequence of frequences. */
-static int PhenomPCore(
+int PhenomPCore(
   COMPLEX16FrequencySeries **hptilde,   /**< Output: Frequency-domain waveform h+ */
   COMPLEX16FrequencySeries **hctilde,   /**< Output: Frequency-domain waveform hx */
   const REAL8 chi1_l_in,                /**< Dimensionless aligned spin on companion 1 */
@@ -102,7 +102,7 @@ static int PhenomPCore(
 );
 
 /* Internal core function to calculate PhenomP polarizations for a single frequency. */
-static int PhenomPCoreOneFrequency(
+int PhenomPCoreOneFrequency(
   const REAL8 fHz,                        /**< Frequency (Hz) */
   const REAL8 eta,                        /**< Symmetric mass ratio */
   const REAL8 chi1_l,                     /**< Dimensionless aligned spin on companion 1 */
@@ -127,18 +127,45 @@ static int PhenomPCoreOneFrequency(
   PhiInsPrefactors *phi_prefactors        /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/
 );
 
+void PhenomPCoreAllFrequencies(UINT4 L_fCut,
+        REAL8Sequence *freqs,
+        UINT4 offset,
+        const REAL8 eta,
+        const REAL8 chi1_l,
+        const REAL8 chi2_l,
+        const REAL8 chip,
+        const REAL8 distance,
+        const REAL8 M,
+        const REAL8 phic,
+        IMRPhenomDAmplitudeCoefficients *pAmp,
+        IMRPhenomDPhaseCoefficients *pPhi,
+        BBHPhenomCParams *PCparams,
+        PNPhasingSeries *pn,
+        NNLOanglecoeffs *angcoeffs,
+        SpinWeightedSphericalHarmonic_l2 *Y2m,
+        const REAL8 alphaNNLOoffset,
+        const REAL8 alpha0,
+        const REAL8 epsilonNNLOoffset,
+        IMRPhenomP_version_type IMRPhenomP_version,
+        AmpInsPrefactors *amp_prefactors,
+        PhiInsPrefactors *phi_prefactors,
+        COMPLEX16FrequencySeries *hptilde,
+        COMPLEX16FrequencySeries *hctilde,
+        REAL8 *phis,
+        int   *errcode);
+
 /* Simple 2PN version of L, without any spin terms expressed as a function of v */
-static REAL8 L2PNR(
+REAL8 L2PNR(
   const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 eta  /**< Symmetric mass-ratio */
 );
 
-static REAL8 L2PNR_v1(
+REAL8 L2PNR_v1(
   const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 eta  /**< Symmetric mass-ratio */
 );
 
-static void WignerdCoefficients(
+void WignerdCoefficients(
   REAL8 *cos_beta_half,   /**< Output: cos(beta/2) */
   REAL8 *sin_beta_half,   /**< Output: sin(beta/2) */
   const REAL8 v,          /**< Cubic root of (Pi * Frequency (geometric)) */
@@ -147,7 +174,7 @@ static void WignerdCoefficients(
   const REAL8 Sp          /**< Dimensionfull spin component in the orbital plane */
 );
 
-static void WignerdCoefficients_SmallAngleApproximation(
+void WignerdCoefficients_SmallAngleApproximation(
   REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
   REAL8 *sin_beta_half, /**< Output: sin(beta/2) */
   const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
@@ -156,7 +183,7 @@ static void WignerdCoefficients_SmallAngleApproximation(
   const REAL8 Sp        /**< Dimensionfull spin component in the orbital plane */
 );
 
-static void CheckMaxOpeningAngle(
+void CheckMaxOpeningAngle(
   const REAL8 m1,     /**< Mass of companion 1 (solar masses) */
   const REAL8 m2,     /**< Mass of companion 2 (solar masses) */
   const REAL8 chi1_l, /**< Aligned spin of BH 1 */
@@ -164,7 +191,7 @@ static void CheckMaxOpeningAngle(
   const REAL8 chip    /**< Dimensionless spin in the orbital plane */
 );
 
-static REAL8 FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH(
+REAL8 FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH(
   const REAL8 m1,     /**< Mass of companion 1 (solar masses) */
   const REAL8 m2,     /**< Mass of companion 2 (solar masses) */
   const REAL8 chi1_l, /**< Aligned spin of BH 1 */
@@ -172,13 +199,13 @@ static REAL8 FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH(
   const REAL8 chip    /**< Dimensionless spin in the orbital plane */
 );
 
-static REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(
+REAL8 FinalSpinBarausse2009_all_spin_on_larger_BH(
   const REAL8 nu,     /**< Symmetric mass-ratio */
   const REAL8 chi,    /**< Effective aligned spin of the binary:  chi = (m1*chi1 + m2*chi2)/M  */
   const REAL8 chip    /**< Dimensionless spin in the orbital plane */
 );
 
-static REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009, arXiv:0904.2577 */
+REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L44, 2009, arXiv:0904.2577 */
   const REAL8 nu,               /**< Symmetric mass-ratio */
   const REAL8 a1,               /**< |a_1| norm of dimensionless spin vector for BH 1 */
   const REAL8 a2,               /**< |a_2| norm of dimensionless spin vector for BH 2 */
@@ -187,7 +214,207 @@ static REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.70
   const REAL8 cos_gamma_tilde   /**< cos(\\tilde gamma) = \\hat a_2 . \\hat L (Eq. 9)*/
 );
 
-static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
-static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
+bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
+void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
+
+#if defined(__cplusplus) && defined(__NVCC__)
+#include <string>
+#include <cuda_runtime.h>
+
+__global__
+void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
+        REAL8Sequence *freqs,
+        UINT4 offset,
+        const REAL8 eta,
+        const REAL8 chi1_l,
+        const REAL8 chi2_l,
+        const REAL8 chip,
+        const REAL8 distance,
+        const REAL8 M,
+        const REAL8 phic,
+        IMRPhenomDAmplitudeCoefficients *pAmp,
+        IMRPhenomDPhaseCoefficients *pPhi,
+        BBHPhenomCParams *PCparams,
+        PNPhasingSeries *pn,
+        NNLOanglecoeffs *angcoeffs,
+        SpinWeightedSphericalHarmonic_l2 *Y2m,
+        const REAL8 alphaNNLOoffset,
+        const REAL8 alpha0,
+        const REAL8 epsilonNNLOoffset,
+        IMRPhenomP_version_type IMRPhenomP_version,
+        AmpInsPrefactors *amp_prefactors,
+        PhiInsPrefactors *phi_prefactors,
+        COMPLEX16FrequencySeries *hptilde,
+        COMPLEX16FrequencySeries *hctilde,
+        REAL8 *phis);
+
+// Host-side exception-handling routines
+__host__ void  _throw_on_generic_error(bool check_failure,int implementation_code,  const std::string file, const std::string func, int line);
+__host__ void  _throw_on_cuda_error   (cudaError_t cuda_code, int implementation_code,  const std::string file, const std::string func, int line);
+__host__ void  _throw_on_kernel_error (int implementation_code, const std::string file, const std::string func, int line);
+__host__ void  _check_for_cuda_error  (int implementation_code, const std::string file, const std::string func, int line);
+__host__ void  _check_thread_sync     (int implementation_code, const std::string file, const std::string func, int line);
+__host__ void  _throw_on_global_error (const std::string file, const std::string func, int line);
+__host__ void  notify_of_global_error (int error_code);
+
+// Wrap exception-handling calls with these macros to add exception location information to the error messages
+// N.B.: The ',' in the execution configuration part of a CUDA kernel call confuses the pre-processor ... so
+//       make sure to add ()'s around the kernel call when using throw_on_kernel_error()
+#define throw_on_generic_error(check_failure,implementation_code){ _throw_on_generic_error(check_failure,implementation_code, __FILE__, __func__, __LINE__); }
+#define throw_on_cuda_error(cuda_code,implementation_code)       { _throw_on_cuda_error ((cuda_code),implementation_code, __FILE__, __func__, __LINE__); }
+#define throw_on_kernel_error(kernel_call,implementation_code)   { (kernel_call);_check_for_cuda_error(implementation_code, __FILE__, __func__, __LINE__); }
+#define check_thread_sync(implementation_code)                   { _check_thread_sync(implementation_code,__FILE__, __func__, __LINE__); }
+#define throw_on_global_error()                                  { _throw_on_global_error(__FILE__, __func__, __LINE__);}
+
+// Define base exception classes
+#include <sstream>
+#include <string>
+#define  GENERIC_CUDA_ERROR_CODE 160614
+class lalsimulation_exception_base : public std::exception {
+    protected:
+        int         _error_code;
+        std::string _message;
+        std::string _file;
+        std::string _func;
+        int         _line;
+        std::string _composition;
+    public:
+        // Constructor (C++ STL strings).
+        explicit lalsimulation_exception_base(int code,const std::string& message,const std::string& file,const std::string& func,const int line):
+          _error_code(code),
+          _message(message),
+          _file(file),
+          _func(func),
+          _line(line)
+          {
+            // Create the error message ...
+            std::stringstream s;
+            // ... add the error description to the exception message
+            s << _message << " (code=";
+            // ... add the error location to the exception message
+            s << _error_code << ")";
+            // Convert stream to string
+            this->_composition = s.str();
+          }
+
+        // Destructor.  Virtual to allow for subclassing.
+        virtual ~lalsimulation_exception_base() noexcept {}
+
+        // The following functions return pointers.
+        //    The underlying memory is possessed by the
+        //    lalsimulation_exception object. Callers must
+        //    not attempt to free the memory.
+        virtual const char* what() const noexcept {
+            return(_composition.c_str());
+        }
+        virtual const char* file() const noexcept {
+            return(_file.c_str());
+        }
+        virtual const char* func() const noexcept {
+            return(_func.c_str());
+        }
+
+        // Returns an integer expressing the error code.
+        virtual int error_code() const noexcept {
+           return(this->_error_code);
+        }
+
+        // Returns an integer expressing the line number of the error.
+        virtual int line() const noexcept {
+           return(this->_line);
+        }
+
+        // Call this method inside catch blocks to process the exception
+        // THIS IS THE CODE TO MODIFY IF YOU WANT TO ADJUST THE WAY
+        //    LALSIMULATION RESPONDS TO GPU ERRORS
+        virtual void process_exception() const{
+            // This loop aids in making the error reporting a bit cleaner in the log
+            //for(int i_rank=0;i_rank<run_globals.mpi_size;i_rank++){
+            //    if(i_rank==run_globals.mpi_rank){
+            //        if(this->error_code()!=0)
+            //            _mlog_error(this->what(),this->file(),this->func(),this->line());
+            //    }
+            //    MPI_Barrier(run_globals.mpi_comm);
+            //}
+            //if(this->error_code()!=0)
+            //    ABORT(EXIT_FAILURE);
+            //else
+            //    ABORT(EXIT_SUCCESS);
+        }
+};
+
+// Derived lalsimulation exception class for CUDA exceptions
+//    Define all implementation error codes and associated error messages here
+class lalsimulation_cuda_exception : public lalsimulation_exception_base {
+    public:
+        // List all the implementation exception codes here
+        enum _code_list{
+            INVALID_FILTER,
+            GLOBAL,
+            INIT,
+            INIT_PBS_GPUFILE,
+            MALLOC,
+            FREE,
+            MEMCPY,
+            SYNC,
+            KERNEL_CMPLX_AX,
+            KERNEL_SET_ARRAY,
+            KERNEL_FILTER,
+            KERNEL_CHECK,
+            KERNEL_MAIN_LOOP
+            };
+    private:
+        std::string _set_message(int code){
+            // List the exception message information for each implementation exception code here
+            switch (code){
+            case INVALID_FILTER:
+                return("Invalid filter specified in run_globals.");
+            case GLOBAL:
+                return("Notified of error on differing rank.");
+            case INIT:
+                return("CUDA error while initializing device.");
+            case INIT_PBS_GPUFILE:
+                return("CUDA error while using PBS_GPUFILE to set device number");
+            case MALLOC:
+                return("CUDA error while calling cudaMalloc()");
+            case FREE:
+                return("CUDA error while calling cudaFree()");
+            case MEMCPY:
+                return("CUDA error while calling cudaMemcpy()");
+            case SYNC:
+                return("CUDA error while syncing device");
+            // The following kernel error messages are meant to have
+            //   modifiers placed in front of them to descriminate
+            //   between CUDA errors and thread-sync errors.
+            case KERNEL_CMPLX_AX:
+                return("scalar-times-complex-vector kernel execution");
+            case KERNEL_SET_ARRAY:
+                return("initialize-vector-to-constant kernel execution");
+            case KERNEL_FILTER:
+                return("filter/convolution kernel execution");
+            case KERNEL_CHECK:
+                return("post-convolution-sanity-check kernel execution");
+            case KERNEL_MAIN_LOOP:
+                return("main find_HII_bubbles() kernel execution");
+            // This should never happen.
+            default:
+                return("Undocumented CUDA error.");
+            }
+        }
+    public:
+        // This is the constructor used for most standard exception handling
+        explicit lalsimulation_cuda_exception(int cuda_code,int implementation_code,const std::string file,const std::string func,const int line) :
+                 lalsimulation_exception_base((cuda_code),_set_message(implementation_code),file,func,line) {
+                     if(implementation_code!=GLOBAL) notify_of_global_error(cuda_code);
+
+        }
+        // This constructor deals with the case when we want to modify the _set_message() string.  This is
+        //    used for specifying whether kernel errors are CUDA errors or thread-sync errors, for example.
+        explicit lalsimulation_cuda_exception(int cuda_code,int implementation_code,const std::string& modifier,const std::string file,const std::string func,const int line) :
+                 lalsimulation_exception_base((cuda_code),modifier+_set_message(implementation_code),file,func,line) {
+                     if(implementation_code!=GLOBAL) notify_of_global_error(cuda_code);
+        }
+};
+#endif
 
 #endif	// of #ifndef _LALSIM_IMR_PHENOMP_H

@@ -472,15 +472,15 @@ static int SEOBNRv2ROMDoubleSpinTimeFrequencySetup(
   REAL8 chi2                                    // Aligned spin of companion 2
 );
 
-UNUSED static REAL8 Interpolate_Coefficent_Matrix(
-  gsl_vector *v,
-  REAL8 eta,
-  REAL8 chi,
-  int ncx,
-  int ncy,
-  gsl_bspline_workspace *bwx,
-  gsl_bspline_workspace *bwy
-);
+//UNUSED static REAL8 Interpolate_Coefficent_Matrix(
+//  gsl_vector *v,
+//  REAL8 eta,
+//  REAL8 chi,
+//  int ncx,
+//  int ncy,
+//  gsl_bspline_workspace *bwx,
+//  gsl_bspline_workspace *bwy
+//);
 
 static void GluePhasing(
   // INPUTS

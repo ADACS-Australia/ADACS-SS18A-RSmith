@@ -11,6 +11,8 @@
 
 #include <lal/LALSimBlackHoleRingdown.h>
 
+#include "LALSimIMRPhenomD.h"
+
 /* note: use double-precision variables, but demand single-precision accuracy */
 #define EPS LAL_REAL4_EPS
 #define TINY LAL_REAL4_MIN
@@ -2462,7 +2464,7 @@ INT4 XLALSimIMREOBGenerateQNMFreqV2fromFinal(COMPLEX16Vector * modefreqs,
 /* TEST CODE */
 
 #if 0   /* TEST CODE */
-
+#include _MAIN
 #include <stdio.h>
 int ringdown_waveform(void)
 {

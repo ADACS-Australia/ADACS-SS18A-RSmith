@@ -16,7 +16,7 @@
  *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
  *  MA  02111-1307  USA
  */
-
+#define _MAIN
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +25,8 @@
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALSimNeutronStar.h>
+
+#include "LALSimIMRPhenomD.h"
 
 int usage(const char *program);
 int parseargs(int argc, char *argv[]);

@@ -35,7 +35,7 @@
 /* Ref. Eq.(A3)-(A5) of http://arxiv.org/pdf/1005.3306v3.pdf         */
 /*                                                                   */
 /*********************************************************************/
-static BBHPhenomCParams *ComputeIMRPhenomCParamsSPA(
+BBHPhenomCParams *ComputeIMRPhenomCParamsSPA(
     const REAL8 m1, /**< mass of companion 1 (solar masses) */
     const REAL8 m2, /**< mass of companion 2 (solar masses) */
     const REAL8 chi, /**< Reduced spin of the binary, defined in the main paper */
@@ -149,7 +149,7 @@ static BBHPhenomCParams *ComputeIMRPhenomCParamsSPA(
 /*                                                                   */
 /*********************************************************************/
 
-static BBHPhenomCParams *ComputeIMRPhenomCParams(
+BBHPhenomCParams *ComputeIMRPhenomCParams(
     const REAL8 m1, /**< mass of companion 1 (solar masses) */
     const REAL8 m2, /**< mass of companion 2 (solar masses) */
     const REAL8 chi, /**< Reduced spin of the binary, defined in the main paper */
@@ -302,7 +302,7 @@ static BBHPhenomCParams *ComputeIMRPhenomCParams(
 /* The following function return the hyperbolic-Tan+ windows used   */
 /* in Eq.(5.9), (5.13) of the Main paper                             */
 /*********************************************************************/
-static REAL8 wPlus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params )
+REAL8 wPlus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params )
 {
 
   REAL8 Mf = params->m_sec * f;
@@ -316,7 +316,7 @@ static REAL8 wPlus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPheno
 /* The following function return the hyperbolic-Tan- windows used   */
 /* in Eq.(5.9), (5.13) of the Main paper                             */
 /*********************************************************************/
-static REAL8 wMinus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params )
+REAL8 wMinus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params )
 {
 
   REAL8 Mf = params->m_sec * f;
@@ -329,7 +329,7 @@ static REAL8 wMinus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhen
 /*********************************************************************/
 /* The following function return the closest higher power of 2       */
 /*********************************************************************/
-static size_t NextPow2_PC(const size_t n) {
+size_t NextPow2_PC(const size_t n) {
   return 1 << (size_t) ceil(log2(n));
 }
 
@@ -344,7 +344,7 @@ static size_t NextPow2_PC(const size_t n) {
 /* Eq. (5.3), (5.9) of the Main paper.                                             */
 /***********************************************************************************/
 
-static REAL8 IMRPhenomCGeneratePhasePM(
+REAL8 IMRPhenomCGeneratePhasePM(
     REAL8 f,                       /**< frequency (Hz) */
     REAL8 eta,                     /**< dimensionless mass-ratio */
     const BBHPhenomCParams *params /**< pointer to Object storing coefficients and constants */
@@ -370,7 +370,7 @@ static REAL8 IMRPhenomCGeneratePhasePM(
 /* Eq. (5.3), (5.9) of the Main paper.                                             */
 /***********************************************************************************/
 
-static int IMRPhenomCGenerateAmpPhase(
+int IMRPhenomCGenerateAmpPhase(
     REAL8 *amplitude, /**< pointer to memory for phenomC amplitude */
     REAL8 *phasing,   /**< pointer to memory for phenomC phase */
     REAL8 f,          /**< frequency (Hz) */
@@ -481,20 +481,20 @@ static int IMRPhenomCGenerateAmpPhase(
 /* PhenomC waveform, both amplitude and phase.                                   */
 /*********************************************************************************/
 
-//static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start);
-//static size_t find_peak_amp(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc);
-//static int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 shift);
-//static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 inclination);
+//size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start);
+//size_t find_peak_amp(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc);
+//int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 shift);
+//int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 inclination);
 
 /*
-static REAL8 IMRPhenomCGeneratePhaseSPA( REAL8 f, const BBHPhenomCParams *params );
-static REAL8 IMRPhenomCGeneratePhaseRD( REAL8 f, const BBHPhenomCParams *params );
-static REAL8 IMRPhenomCGenerateAmplitudePM( REAL8 f, const BBHPhenomCParams *params );
-static REAL8 IMRPhenomCGenerateAmplitudeRD( REAL8 f, const BBHPhenomCParams *params );
+REAL8 IMRPhenomCGeneratePhaseSPA( REAL8 f, const BBHPhenomCParams *params );
+REAL8 IMRPhenomCGeneratePhaseRD( REAL8 f, const BBHPhenomCParams *params );
+REAL8 IMRPhenomCGenerateAmplitudePM( REAL8 f, const BBHPhenomCParams *params );
+REAL8 IMRPhenomCGenerateAmplitudeRD( REAL8 f, const BBHPhenomCParams *params );
 */
 
 /*
-static REAL8 IMRPhenomCGeneratePhaseSPA( REAL8 f, const BBHPhenomCParams *params )
+REAL8 IMRPhenomCGeneratePhaseSPA( REAL8 f, const BBHPhenomCParams *params )
 {
   REAL8 v =  cbrt(params->piM * f);
 
@@ -521,14 +521,14 @@ static REAL8 IMRPhenomCGeneratePhaseSPA( REAL8 f, const BBHPhenomCParams *params
 */
 
 /*
-static REAL8 IMRPhenomCGeneratePhaseRD( REAL8 f, const BBHPhenomCParams *params )
+REAL8 IMRPhenomCGeneratePhaseRD( REAL8 f, const BBHPhenomCParams *params )
 {
  return (params->b1 + params->b2 * params->m_sec * f);
 }
 */
 
 #if 0
-static REAL8 IMRPhenomCGenerateAmplitudePM( REAL8 f, const BBHPhenomCParams *params )
+REAL8 IMRPhenomCGenerateAmplitudePM( REAL8 f, const BBHPhenomCParams *params )
 {
   REAL8 v =  cbrt(params->piM * f);
   REAL8 Mf = params->m_sec * f;
@@ -576,7 +576,7 @@ static REAL8 IMRPhenomCGenerateAmplitudePM( REAL8 f, const BBHPhenomCParams *par
   return amplitude;
 }
 
-static REAL8 IMRPhenomCGenerateAmplitudeRD( REAL8 f, const BBHPhenomCParams *params )
+REAL8 IMRPhenomCGenerateAmplitudeRD( REAL8 f, const BBHPhenomCParams *params )
 {
   REAL8 Mf = params->m_sec * f;
   REAL8 Mfrd = params->MfRingDown;

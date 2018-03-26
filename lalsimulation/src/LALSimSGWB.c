@@ -16,7 +16,6 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-
 #include <complex.h>
 #include <math.h>
 #include <stdio.h>
@@ -32,6 +31,8 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 #include <lal/LALSimSGWB.h>
+
+#include "LALSimIMRPhenomD.h"
 
 /* 
  * This routine generates a single segment of data.  Note that this segment is
@@ -563,6 +564,7 @@ int XLALSimSGWBPowerLawSpectrum(
 
 #if 0
 
+#define _MAIN
 #include <stdio.h>
 #include <lal/TimeSeries.h>
 

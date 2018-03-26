@@ -42,7 +42,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 
-#include "LALSimIMRPhenomC_internals.c"
+#include "LALSimIMRPhenomC_internals.h"
 
 #ifndef _OPENMP
 #define omp ignore
@@ -53,23 +53,23 @@
  *
  */
 
-static int IMRPhenomCGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phi0, const REAL8 deltaF, const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const BBHPhenomCParams *params);
+int IMRPhenomCGenerateFD(COMPLEX16FrequencySeries **htilde, const REAL8 phi0, const REAL8 deltaF, const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const BBHPhenomCParams *params);
 
-static int IMRPhenomCGenerateFDForTD(COMPLEX16FrequencySeries **htilde, const REAL8 t0, const REAL8 phi0, const REAL8 deltaF, const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const BBHPhenomCParams *params, const size_t nf);
-static int IMRPhenomCGenerateTD(REAL8TimeSeries **h, const REAL8 phiPeak, size_t *ind_t0, const REAL8 deltaT, const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const BBHPhenomCParams *params);
+int IMRPhenomCGenerateFDForTD(COMPLEX16FrequencySeries **htilde, const REAL8 t0, const REAL8 phi0, const REAL8 deltaF, const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const BBHPhenomCParams *params, const size_t nf);
+int IMRPhenomCGenerateTD(REAL8TimeSeries **h, const REAL8 phiPeak, size_t *ind_t0, const REAL8 deltaT, const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 f_max, const REAL8 distance, const BBHPhenomCParams *params);
 
-static REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 deltaT);
-static REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 dt);
-static REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min);
-static size_t EstimateIMRLength(const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 deltaT);
+REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 deltaT);
+REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 dt);
+REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min);
+size_t EstimateIMRLength(const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 deltaT);
 
-static int FDToTD(REAL8TimeSeries **signalTD, const COMPLEX16FrequencySeries *signalFD, const REAL8 totalMass, const REAL8 deltaT, const REAL8 f_min, const REAL8 f_max, const REAL8 f_min_wide, const REAL8 f_max_wide);
-static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start);
-static size_t find_peak_amp(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc);
-static int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 shift);
-static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 inclination);
+int FDToTD(REAL8TimeSeries **signalTD, const COMPLEX16FrequencySeries *signalFD, const REAL8 totalMass, const REAL8 deltaT, const REAL8 f_min, const REAL8 f_max, const REAL8 f_min_wide, const REAL8 f_max_wide);
+size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start);
+size_t find_peak_amp(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc);
+int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 shift);
+int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 inclination);
 
-static REAL8 PlanckTaper(const REAL8 t, const REAL8 t1, const REAL8 t2);
+REAL8 PlanckTaper(const REAL8 t, const REAL8 t1, const REAL8 t2);
 
 /**
  * @addtogroup LALSimIMRPhenom_c
@@ -300,7 +300,7 @@ int XLALSimIMRPhenomCGenerateTD(
 /* given coefficients */
 /* *********************************************************************************/
 
-static int IMRPhenomCGenerateFD(
+int IMRPhenomCGenerateFD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
     const REAL8 phi0,                  /**< phase at peak */
     const REAL8 deltaF,                /**< frequency resolution */
@@ -418,7 +418,7 @@ static int IMRPhenomCGenerateFD(
   return XLAL_SUCCESS;
 }
 
-static int IMRPhenomCGenerateFDForTD(
+int IMRPhenomCGenerateFDForTD(
     COMPLEX16FrequencySeries **htilde, /**< FD waveform */
     const REAL8 t0,					   /**< time of coalescence */
     const REAL8 phi0,                  /**< phase at peak */
@@ -432,7 +432,7 @@ static int IMRPhenomCGenerateFDForTD(
     const BBHPhenomCParams *params,    /**< from ComputeIMRPhenomCParams */
     const size_t nf                    /**< Length of frequency vector required */
 ) {
-  static LIGOTimeGPS ligotimegps_zero = {0, 0};
+  LIGOTimeGPS ligotimegps_zero = {0, 0};
   size_t i;
   INT4 errcode;
 
@@ -485,7 +485,7 @@ static int IMRPhenomCGenerateFDForTD(
 /*
  * Private function to generate time-domain waveforms given coefficients
  */
-static int IMRPhenomCGenerateTD(
+int IMRPhenomCGenerateTD(
 	REAL8TimeSeries **h,
     const REAL8 phi0,
     size_t *ind_t0,
@@ -542,7 +542,7 @@ static int IMRPhenomCGenerateTD(
 /*
  * Return tau0, the Newtonian chirp length estimate.
  */
-static REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min) {
+REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min) {
 	const REAL8 totalMass = m1 + m2;
 	const REAL8 eta = m1 * m2 / (totalMass * totalMass);
 	return 5. * totalMass * LAL_MTSUN_SI / (256. * eta * pow(LAL_PI * totalMass * LAL_MTSUN_SI * f_min, 8./3.));
@@ -552,7 +552,7 @@ static REAL8 ComputeTau0(const REAL8 m1, const REAL8 m2, const REAL8 f_min) {
  * Estimate the length of a TD vector that can hold the waveform as the Newtonian
  * chirp time tau0 plus 1000 M.
  */
-static size_t EstimateIMRLength(const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 deltaT) {
+size_t EstimateIMRLength(const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 deltaT) {
 	return (size_t) floor((ComputeTau0(m1, m2, f_min) + 1000 * (m1 + m2) * LAL_MTSUN_SI) / deltaT);
 }
 
@@ -561,7 +561,7 @@ static size_t EstimateIMRLength(const REAL8 m1, const REAL8 m2, const REAL8 f_mi
  * time) such that the waveform has a minimum length of tau0. This is
  * necessary to avoid FFT artifacts.
  */
-static REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 deltaT) {
+REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f_min, const REAL8 deltaT) {
 	const REAL8 totalMass = m1 + m2;
 	const REAL8 eta = m1 * m2 / (totalMass * totalMass);
 	const REAL8 fISCO = 0.022 / (totalMass * LAL_MTSUN_SI);
@@ -576,7 +576,7 @@ static REAL8 EstimateSafeFMinForTD(const REAL8 m1, const REAL8 m2, const REAL8 f
 /*
  * Find a higher value of f_max so that we can safely apply a window later.
  */
-static REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 deltaT) {
+REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 deltaT) {
 	REAL8 temp_f_max = 1.025 * f_max;
 
 	/* make sure that these frequencies are not too out of range */
@@ -590,7 +590,7 @@ static REAL8 EstimateSafeFMaxForTD(const REAL8 f_max, const REAL8 deltaT) {
  * Requires that the FD waveform be generated outside of f_min and f_max.
  * FD waveform is modified.
  */
-static int FDToTD(REAL8TimeSeries **signalTD, const COMPLEX16FrequencySeries *signalFD, const REAL8 totalMass, const REAL8 deltaT, const REAL8 f_min, const REAL8 f_max, const REAL8 f_min_wide, const REAL8 f_max_wide) {
+int FDToTD(REAL8TimeSeries **signalTD, const COMPLEX16FrequencySeries *signalFD, const REAL8 totalMass, const REAL8 deltaT, const REAL8 f_min, const REAL8 f_max, const REAL8 f_min_wide, const REAL8 f_max_wide) {
 	const LIGOTimeGPS gpstime_zero = {0, 0};
 	const size_t nf = signalFD->data->length;
 	const size_t nt = 2 * (nf - 1);
@@ -649,7 +649,7 @@ static int FDToTD(REAL8TimeSeries **signalTD, const COMPLEX16FrequencySeries *si
 }
 
 /* return the index before the instantaneous frequency rises past target */
-static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start) {
+size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 target, const size_t start) {
 	/* const size_t n = hp->data->length - 1; */
 	/* size_t k = (start + 1) > 0 ? (start + 1) : 0; */
 	size_t k = start;
@@ -676,7 +676,7 @@ static size_t find_instant_freq(const REAL8TimeSeries *hp, const REAL8TimeSeries
 }
 
 /* Return the index of the sample at with the peak amplitude */
-static size_t find_peak_amp(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc) {
+size_t find_peak_amp(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc) {
 	const REAL8 *hpdata = hp->data->data;
 	const REAL8 *hcdata = hc->data->data;
 	size_t k = hp->data->length;
@@ -693,7 +693,7 @@ static size_t find_peak_amp(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc
 	return peak_ind;
 }
 
-static int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 shift) {
+int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 shift) {
     REAL8 *hpdata = hp->data->data;
     REAL8 *hcdata = hc->data->data;
     size_t k = hp->data->length;
@@ -708,7 +708,7 @@ static int apply_phase_shift(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
     return 0;
 }
 
-static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 inclination) {
+int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *hc, const REAL8 inclination) {
 	REAL8 inclFacPlus, inclFacCross;
 	REAL8 *hpdata = hp->data->data;
 	REAL8 *hcdata = hc->data->data;
@@ -724,7 +724,7 @@ static int apply_inclination(const REAL8TimeSeries *hp, const REAL8TimeSeries *h
 	return XLAL_SUCCESS;
 }
 
-static REAL8 PlanckTaper(const REAL8 t, const REAL8 t1, const REAL8 t2)
+REAL8 PlanckTaper(const REAL8 t, const REAL8 t1, const REAL8 t2)
 	{
 	REAL8 taper;
 	if (t <= t1) {

@@ -115,7 +115,7 @@
  * quasi-normal modes of Kerr black holes", Proc. R. Soc. Lond. A @b 402 285
  * (1985).
  */
-
+#define _MAIN
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
@@ -125,6 +125,9 @@
 #include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
 #include <lal/LALSimBlackHoleRingdown.h>
+
+#include "LALSimIMR.h"
+#include "LALSimIMRPhenomD.h"
 
 #define a_invalid -100.0 /* invalid */
 #define l_invalid (INT_MIN + 1) /* invalid */

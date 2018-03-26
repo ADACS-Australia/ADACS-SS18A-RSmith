@@ -92,7 +92,7 @@
  * of 1 Mpc and inclination of 45 degrees that radiates 1% of its mass in the l
  * = 2, m = 2 quasinormal mode.
  */
-
+#define _MAIN
 #include <complex.h>
 #include <limits.h>
 #include <math.h>
@@ -104,7 +104,8 @@
 #include <lal/LALConstants.h>
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
-#include <lal/LALSimBlackHoleRingdown.h>
+
+#include "LALSimIMRPhenomD.h"#include <lal/LALSimBlackHoleRingdown.h>
 
 #define a_invalid -100.0 /* invalid */
 #define i_invalid -361.0 /* invalid */

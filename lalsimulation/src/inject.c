@@ -71,7 +71,7 @@
  * `signal` injected into the simulated noise contained in file `noise`.
  */
 
-
+#define _MAIN
 #include <math.h>
 #include <limits.h>
 #include <stdio.h>
@@ -82,7 +82,8 @@
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
-#include <lal/LALSimulation.h>
+
+#include "LALSimIMRPhenomD.h"#include <lal/LALSimulation.h>
 
 char *program;
 int usage(void);

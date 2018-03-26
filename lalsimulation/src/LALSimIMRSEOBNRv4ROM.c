@@ -215,15 +215,15 @@ UNUSED static int SEOBNRv4ROMTimeFrequencySetup(
   REAL8 *Mf_ROM_max                             // Highest geometric frequency for ROM
 );
 
-UNUSED static REAL8 Interpolate_Coefficent_Matrix(
-  gsl_vector *v,
-  REAL8 eta,
-  REAL8 chi,
-  int ncx,
-  int ncy,
-  gsl_bspline_workspace *bwx,
-  gsl_bspline_workspace *bwy
-);
+//UNUSED static REAL8 Interpolate_Coefficent_Matrix(
+//  gsl_vector *v,
+//  REAL8 eta,
+//  REAL8 chi,
+//  int ncx,
+//  int ncy,
+//  gsl_bspline_workspace *bwx,
+//  gsl_bspline_workspace *bwy
+//);
 
 UNUSED static void GlueAmplitude(
   // INPUTS

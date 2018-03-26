@@ -77,7 +77,7 @@
  * strain noise in the LHO, LLO, and Virgo detectors having
  * \f$ {\Omega_0=10^{-6}} \f$ .
  */
-
+#define _MAIN
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -92,6 +92,8 @@
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALSimSGWB.h>
+
+#include "LALSimIMRPhenomD.h"
 
 double srate = 16384.0; // sampling rate in Hertz
 double tstart;

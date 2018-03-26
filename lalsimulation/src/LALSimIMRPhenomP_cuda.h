@@ -48,8 +48,6 @@
 
 #include "LALSimIMR.h"
 
-#include "LALSimIMRPhenomP.h"
-
 void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         REAL8Sequence *freqs,
         UINT4 offset,

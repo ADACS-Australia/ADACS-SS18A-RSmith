@@ -16,13 +16,14 @@
 *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
 *  MA  02111-1307  USA
 */
-
 #include <math.h>
 
 #include <lal/LALConstants.h>
 #include <lal/LALDetectors.h>
 #include <lal/Units.h>
 #include <lal/LALSimSGWB.h>
+
+#include "LALSimIMRPhenomD.h"
 
 /**
  * @addtogroup LALSimSGWBORF_c
@@ -120,6 +121,7 @@ double XLALSimSGWBOverlapReductionFunction(
  */
 
 #if 0
+#define _MAIN
 #include <stdio.h>
 
 /*

@@ -135,7 +135,7 @@
  * centered at 150 Hz having root-sum-squared strain
  * \f$ h_{\mathrm{rss}} = 10^{-22}\, {\rm Hz}^{-1/2} \f$.
  */
-
+#define _MAIN
 #include <errno.h>
 #include <math.h>
 #include <stdlib.h>
@@ -145,7 +145,8 @@
 #include <lal/LALgetopt.h>
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
-#include <lal/LALSimBurst.h>
+
+#include "LALSimIMRPhenomD.h"#include <lal/LALSimBurst.h>
 
 #define XSTR(x) #x
 #define STR(x) XSTR(x)

@@ -65,7 +65,7 @@
 #define nk_amp 78  // number of SVD-modes == number of basis functions for amplitude
 #define nk_phi 200 // number of SVD-modes == number of basis functions for phase
 
-static const double gA[] = {0.0001, 0.00011, 0.000121, 0.0001331, 0.00014641, 0.000161051, \
+const double gA[] = {0.0001, 0.00011, 0.000121, 0.0001331, 0.00014641, 0.000161051, \
   0.000177156, 0.000194872, 0.000214359, 0.000235795, 0.000259374, \
   0.000285312, 0.000313843, 0.000345227, 0.00037975, 0.000417725, \
   0.000459497, 0.000505447, 0.000555992, 0.000611591, 0.00067275, \
@@ -80,7 +80,7 @@ static const double gA[] = {0.0001, 0.00011, 0.000121, 0.0001331, 0.00014641, 0.
   0.0490371, 0.0539408, 0.0593349, 0.0652683, 0.0717952, 0.0789747, \
   0.0868722, 0.0955594, 0.105115, 0.115627, 0.12719, 0.139908, 0.14};
 
-static const double gPhi[] = {0.0001, 0.000101411, 0.000102849, 0.000104314, 0.000105806, \
+const double gPhi[] = {0.0001, 0.000101411, 0.000102849, 0.000104314, 0.000105806, \
   0.000107328, 0.000108878, 0.000110459, 0.00011207, 0.000113712, \
   0.000115387, 0.000117095, 0.000118836, 0.000120613, 0.000122424, \
   0.000124272, 0.000126157, 0.000128081, 0.000130044, 0.000132047, \
@@ -121,7 +121,7 @@ static const double gPhi[] = {0.0001, 0.000101411, 0.000102849, 0.000104314, 0.0
   0.115873, 0.133047, 0.14};
 
 #ifdef LAL_PTHREAD_LOCK
-static pthread_once_t SEOBNRv1ROMEffectiveSpin_is_initialized = PTHREAD_ONCE_INIT;
+pthread_once_t SEOBNRv1ROMEffectiveSpin_is_initialized = PTHREAD_ONCE_INIT;
 #endif
 
 /*************** type definitions ******************/
@@ -143,7 +143,7 @@ struct tagSEOBNRROMdata
 };
 typedef struct tagSEOBNRROMdata SEOBNRROMdata;
 
-static SEOBNRROMdata __lalsim_SEOBNRv1ROMSS_data;
+SEOBNRROMdata __lalsim_SEOBNRv1ROMSS_data;
 
 typedef struct tagSplineData
 {
@@ -154,12 +154,12 @@ typedef struct tagSplineData
 
 /**************** Internal functions **********************/
 
-static void SEOBNRv1ROMEffectiveSpin_Init_LALDATA(void);
-static int SEOBNRv1ROMEffectiveSpin_Init(const char dir[]);
-static bool SEOBNRv1ROMEffectiveSpin_IsSetup(void);
+void SEOBNRv1ROMEffectiveSpin_Init_LALDATA(void);
+int SEOBNRv1ROMEffectiveSpin_Init(const char dir[]);
+bool SEOBNRv1ROMEffectiveSpin_IsSetup(void);
 
-static int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]);
-static void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata);
+int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]);
+void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata);
 
 /**
  * Core function for computing the ROM waveform.
@@ -167,7 +167,7 @@ static void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata);
  * Construct 1D splines for amplitude and phase.
  * Compute strain waveform from amplitude and phase.
 */
-static int SEOBNRv1ROMEffectiveSpinCore(
+int SEOBNRv1ROMEffectiveSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
@@ -184,19 +184,19 @@ static int SEOBNRv1ROMEffectiveSpinCore(
    * Then we will use deltaF = 0 to create the frequency series we return. */
 );
 
-static void SEOBNRROMdata_coeff_Init(SEOBNRROMdata_coeff **romdatacoeff);
-static void SEOBNRROMdata_coeff_Cleanup(SEOBNRROMdata_coeff *romdatacoeff);
+void SEOBNRROMdata_coeff_Init(SEOBNRROMdata_coeff **romdatacoeff);
+void SEOBNRROMdata_coeff_Cleanup(SEOBNRROMdata_coeff *romdatacoeff);
 
-static size_t NextPow2(const size_t n);
-static void SplineData_Destroy(SplineData *splinedata);
-static void SplineData_Init(SplineData **splinedata);
+size_t NextPow2(const size_t n);
+void SplineData_Destroy(SplineData *splinedata);
+void SplineData_Init(SplineData **splinedata);
 
-static int read_vector(const char dir[], const char fname[], gsl_vector *v);
-static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
+int read_vector(const char dir[], const char fname[], gsl_vector *v);
+int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
 
-static int load_data(const char dir[], gsl_vector *cvec_amp, gsl_vector *cvec_phi, gsl_matrix *Bamp, gsl_matrix *Bphi, gsl_vector *cvec_amp_pre);
+int load_data(const char dir[], gsl_vector *cvec_amp, gsl_vector *cvec_phi, gsl_matrix *Bamp, gsl_matrix *Bphi, gsl_vector *cvec_amp_pre);
 
-static int TP_Spline_interpolation_2d(
+int TP_Spline_interpolation_2d(
   REAL8 q,                  // Input: q-value for which projection coefficients should be evaluated
   REAL8 chi,                // Input: chi-value for which projection coefficients should be evaluated
   gsl_vector *cvec_amp,     // Input: data for spline coefficients for amplitude
@@ -212,7 +212,7 @@ static int TP_Spline_interpolation_2d(
 
 /** Setup SEOBNRv1ROMEffectiveSpin model using data files installed in dir
  */
-static int SEOBNRv1ROMEffectiveSpin_Init(const char dir[]) {
+int SEOBNRv1ROMEffectiveSpin_Init(const char dir[]) {
   if(__lalsim_SEOBNRv1ROMSS_data.setup) {
     XLALPrintError("Error: SEOBNRROMdata was already set up!");
     XLAL_ERROR(XLAL_EFAILED);
@@ -229,7 +229,7 @@ static int SEOBNRv1ROMEffectiveSpin_Init(const char dir[]) {
 }
 
 /** Helper function to check if the SEOBNRv1ROMEffectiveSpin model has been initialised */
-static bool SEOBNRv1ROMEffectiveSpin_IsSetup(void) {
+bool SEOBNRv1ROMEffectiveSpin_IsSetup(void) {
   if(__lalsim_SEOBNRv1ROMSS_data.setup)
     return true;
   else
@@ -237,7 +237,7 @@ static bool SEOBNRv1ROMEffectiveSpin_IsSetup(void) {
 }
 
 // Read binary ROM data for basis functions and coefficients
-static int load_data(const char dir[], gsl_vector *cvec_amp, gsl_vector *cvec_phi, gsl_matrix *Bamp, gsl_matrix *Bphi, gsl_vector *cvec_amp_pre) {
+int load_data(const char dir[], gsl_vector *cvec_amp, gsl_vector *cvec_phi, gsl_matrix *Bamp, gsl_matrix *Bphi, gsl_vector *cvec_amp_pre) {
   // Load binary data for amplitude and phase spline coefficients as computed in Mathematica
   int ret = XLAL_SUCCESS;
   ret |= read_vector(dir, "SEOBNRv1ROM_SS_Amp_ciall.dat", cvec_amp);
@@ -248,7 +248,7 @@ static int load_data(const char dir[], gsl_vector *cvec_amp, gsl_vector *cvec_ph
   return(ret);
 }
 
-static void SplineData_Init( SplineData **splinedata )
+void SplineData_Init( SplineData **splinedata )
 {
   if(!splinedata) exit(1);
   if(*splinedata) SplineData_Destroy(*splinedata);
@@ -306,7 +306,7 @@ static void SplineData_Init( SplineData **splinedata )
   (*splinedata)->bwy=bwy;
 }
 
-static void SplineData_Destroy(SplineData *splinedata)
+void SplineData_Destroy(SplineData *splinedata)
 {
   if(!splinedata) return;
   if(splinedata->bwx) gsl_bspline_free(splinedata->bwx);
@@ -316,7 +316,7 @@ static void SplineData_Destroy(SplineData *splinedata)
 
 // Interpolate projection coefficients for amplitude and phase over the parameter space (q, chi).
 // The multi-dimensional interpolation is carried out via a tensor product decomposition.
-static int TP_Spline_interpolation_2d(
+int TP_Spline_interpolation_2d(
   REAL8 q,                  // Input: q-value for which projection coefficients should be evaluated
   REAL8 chi,                // Input: chi-value for which projection coefficients should be evaluated
   gsl_vector *cvec_amp,     // Input: data for spline coefficients for amplitude
@@ -359,7 +359,7 @@ static int TP_Spline_interpolation_2d(
 }
 
 /* Set up a new ROM model, using data contained in dir */
-static int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
+int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
   // set up ROM
   int ncx = 159;    // points in q
   int ncy = 49;     // points in chi
@@ -389,7 +389,7 @@ static int SEOBNRROMdata_Init(SEOBNRROMdata *romdata, const char dir[]) {
 
 
 /* Deallocate contents of the given SEOBNRROMdata structure */
-static void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata) {
+void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata) {
   if(romdata->cvec_amp) gsl_vector_free(romdata->cvec_amp);
   if(romdata->cvec_phi) gsl_vector_free(romdata->cvec_phi);
   if(romdata->Bamp) gsl_matrix_free(romdata->Bamp);
@@ -399,7 +399,7 @@ static void SEOBNRROMdata_Cleanup(SEOBNRROMdata *romdata) {
 }
 
 /* Structure for internal use */
-static void SEOBNRROMdata_coeff_Init(SEOBNRROMdata_coeff **romdatacoeff) {
+void SEOBNRROMdata_coeff_Init(SEOBNRROMdata_coeff **romdatacoeff) {
 
   if(!romdatacoeff) exit(1);
   /* Create storage for structures */
@@ -413,14 +413,14 @@ static void SEOBNRROMdata_coeff_Init(SEOBNRROMdata_coeff **romdatacoeff) {
 }
 
 /* Deallocate contents of the given SEOBNRROMdata_coeff structure */
-static void SEOBNRROMdata_coeff_Cleanup(SEOBNRROMdata_coeff *romdatacoeff) {
+void SEOBNRROMdata_coeff_Cleanup(SEOBNRROMdata_coeff *romdatacoeff) {
   if(romdatacoeff->c_amp) gsl_vector_free(romdatacoeff->c_amp);
   if(romdatacoeff->c_phi) gsl_vector_free(romdatacoeff->c_phi);
   XLALFree(romdatacoeff);
 }
 
 /* Return the closest higher power of 2  */
-static size_t NextPow2(const size_t n) {
+size_t NextPow2(const size_t n) {
   return 1 << (size_t) ceil(log2(n));
 }
 
@@ -430,7 +430,7 @@ static size_t NextPow2(const size_t n) {
  * Construct 1D splines for amplitude and phase.
  * Compute strain waveform from amplitude and phase.
 */
-static int SEOBNRv1ROMEffectiveSpinCore(
+int SEOBNRv1ROMEffectiveSpinCore(
   COMPLEX16FrequencySeries **hptilde,
   COMPLEX16FrequencySeries **hctilde,
   double phiRef,
@@ -850,7 +850,7 @@ int XLALSimIMRSEOBNRv1ROMEffectiveSpin(
 
 /** Setup SEOBNRv1ROMEffectiveSpin model using data files installed in $LAL_DATA_PATH
  */
-static void SEOBNRv1ROMEffectiveSpin_Init_LALDATA(void)
+void SEOBNRv1ROMEffectiveSpin_Init_LALDATA(void)
 {
   if (SEOBNRv1ROMEffectiveSpin_IsSetup()) return;
 

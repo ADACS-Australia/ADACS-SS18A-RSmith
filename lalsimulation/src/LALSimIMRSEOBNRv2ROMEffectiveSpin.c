@@ -200,8 +200,8 @@ static size_t NextPow2(const size_t n);
 static void SplineData_Destroy(SplineData *splinedata);
 static void SplineData_Init(SplineData **splinedata);
 
-static int read_vector(const char dir[], const char fname[], gsl_vector *v);
-static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
+//static int read_vector(const char dir[], const char fname[], gsl_vector *v);
+//static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
 
 static int load_data(const char dir[], gsl_vector *cvec_amp, gsl_vector *cvec_phi, gsl_matrix *Bamp, gsl_matrix *Bphi, gsl_vector *cvec_amp_pre);
 
@@ -251,17 +251,17 @@ static int SEOBNRv2ROMEffectiveSpinTimeFrequencySetup(
   REAL8 chi                                     // Effective aligned spin
 );
 
-UNUSED static REAL8 Interpolate_Coefficent_Tensor(
-  gsl_vector *v,
-  REAL8 eta,
-  REAL8 chi1,
-  REAL8 chi2,
-  int ncy,
-  int ncz,
-  gsl_bspline_workspace *bwx,
-  gsl_bspline_workspace *bwy,
-  gsl_bspline_workspace *bwz
-);
+//UNUSED static REAL8 Interpolate_Coefficent_Tensor(
+//  gsl_vector *v,
+//  REAL8 eta,
+//  REAL8 chi1,
+//  REAL8 chi2,
+//  int ncy,
+//  int ncz,
+//  gsl_bspline_workspace *bwx,
+//  gsl_bspline_workspace *bwy,
+//  gsl_bspline_workspace *bwz
+//);
 
 /********************* Definitions begin here ********************/
 

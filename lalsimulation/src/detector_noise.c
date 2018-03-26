@@ -128,7 +128,7 @@
  *
  * will stream 1000 seconds of zero-noise beginning at GPS time 1000000000.
  */
-
+#define _MAIN
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -143,7 +143,8 @@
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALSimNoise.h>
-#include <lal/LALSimUtils.h>
+
+#include "LALSimIMRPhenomD.h"#include <lal/LALSimUtils.h>
 
 static LALUnit strainSquaredPerHertzUnit = { 0, { 0, 0, 1, 0, 0, 2, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 

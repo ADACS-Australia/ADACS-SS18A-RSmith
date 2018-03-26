@@ -1,3 +1,4 @@
+#define _MAIN
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,6 +15,8 @@
 #include <lal/Date.h>
 #include <lal/Audio.h>
 #include <lal/LALSimBurst.h>
+
+#include "LALSimIMRPhenomD.h"
 
 /* global variables for parameters (with default values) */
 LALDetector detector;
