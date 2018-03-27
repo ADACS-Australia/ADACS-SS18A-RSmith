@@ -223,9 +223,9 @@ size_t NextPow2(const size_t n);
 // double StepFunc(const double t, const double t1);
 bool StepFunc_boolean(const double t, const double t1);
 
-inline double pow_2_of(double number);
-inline double pow_3_of(double number);
-inline double pow_4_of(double number);
+//inline double pow_2_of(double number);
+//inline double pow_3_of(double number);
+//inline double pow_4_of(double number);
 
 double Subtract3PNSS(double m1, double m2, double M, double chi1, double chi2);
 

@@ -1838,11 +1838,3 @@ UNUSED BBHPhenomCParams *ComputeIMRPhenomCParamsRDmod(
 
   return p;
 }
-
-
-// This function determines whether x and y are approximately equal to a relative accuracy epsilon.
-// Note that x and y are compared to relative accuracy, so this function is not suitable for testing whether a value is approximately zero.
-bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon) {
-  return !gsl_fcmp(x, y, epsilon);
-}
-

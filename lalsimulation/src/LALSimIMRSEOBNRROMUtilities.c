@@ -44,20 +44,20 @@
 #include <lal/H5FileIO.h>
 #endif
 
-UNUSED int read_vector(const char dir[], const char fname[], gsl_vector *v);
-UNUSED int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
+UNUSED static int read_vector(const char dir[], const char fname[], gsl_vector *v);
+UNUSED static int read_matrix(const char dir[], const char fname[], gsl_matrix *m);
 
 #ifdef LAL_HDF5_ENABLED
-UNUSED int CheckVectorFromHDF5(LALH5File *file, const char name[], const double *v, size_t n);
-UNUSED int ReadHDF5RealVectorDataset(LALH5File *file, const char *name, gsl_vector **data);
-UNUSED int ReadHDF5RealMatrixDataset(LALH5File *file, const char *name, gsl_matrix **data);
-UNUSED int ReadHDF5LongVectorDataset(LALH5File *file, const char *name, gsl_vector_long **data);
-UNUSED int ReadHDF5LongMatrixDataset(LALH5File *file, const char *name, gsl_matrix_long **data);
-UNUSED void PrintInfoStringAttribute(LALH5File *file, const char attribute[]);
-UNUSED int ROM_check_version_number(LALH5File *file, 	INT4 version_major_in, INT4 version_minor_in, INT4 version_micro_in);
+UNUSED static int CheckVectorFromHDF5(LALH5File *file, const char name[], const double *v, size_t n);
+UNUSED static int ReadHDF5RealVectorDataset(LALH5File *file, const char *name, gsl_vector **data);
+UNUSED static int ReadHDF5RealMatrixDataset(LALH5File *file, const char *name, gsl_matrix **data);
+UNUSED static int ReadHDF5LongVectorDataset(LALH5File *file, const char *name, gsl_vector_long **data);
+UNUSED static int ReadHDF5LongMatrixDataset(LALH5File *file, const char *name, gsl_matrix_long **data);
+UNUSED static void PrintInfoStringAttribute(LALH5File *file, const char attribute[]);
+UNUSED static int ROM_check_version_number(LALH5File *file, 	INT4 version_major_in, INT4 version_minor_in, INT4 version_micro_in);
 #endif
 
-UNUSED REAL8 Interpolate_Coefficent_Tensor(
+UNUSED static REAL8 Interpolate_Coefficent_Tensor(
   gsl_vector *v,
   REAL8 eta,
   REAL8 chi1,
@@ -69,7 +69,7 @@ UNUSED REAL8 Interpolate_Coefficent_Tensor(
   gsl_bspline_workspace *bwz
 );
 
-UNUSED REAL8 Interpolate_Coefficent_Matrix(
+UNUSED static REAL8 Interpolate_Coefficent_Matrix(
   gsl_vector *v,
   REAL8 eta,
   REAL8 chi,
@@ -79,19 +79,19 @@ UNUSED REAL8 Interpolate_Coefficent_Matrix(
   gsl_bspline_workspace *bwy
 );
 
-UNUSED gsl_vector *Fit_cubic(const gsl_vector *xi, const gsl_vector *yi);
+UNUSED static gsl_vector *Fit_cubic(const gsl_vector *xi, const gsl_vector *yi);
 
-UNUSED bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
-UNUSED void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
+UNUSED static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon);
+UNUSED static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
 
-UNUSED double SEOBNRROM_Ringdown_Mf_From_Mtot_q(
+UNUSED static double SEOBNRROM_Ringdown_Mf_From_Mtot_q(
   const double Mtot_sec,
   const double q,
   const double chi1,
   const double chi2,
   Approximant apx
 );
-UNUSED double SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(
+UNUSED static double SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(
   const double Mtot_sec,
   const double eta,
   const double chi1,
@@ -103,7 +103,7 @@ UNUSED double SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(
 // Definitions
 
 // Helper functions to read gsl_vector and gsl_matrix data with error checking
-int read_vector(const char dir[], const char fname[], gsl_vector *v) {
+static int read_vector(const char dir[], const char fname[], gsl_vector *v) {
   size_t size = strlen(dir) + strlen(fname) + 2;
   char *path = XLALMalloc(size);
   snprintf(path, size, "%s/%s", dir, fname);
@@ -121,7 +121,7 @@ int read_vector(const char dir[], const char fname[], gsl_vector *v) {
   return(XLAL_SUCCESS);
 }
 
-int read_matrix(const char dir[], const char fname[], gsl_matrix *m) {
+static int read_matrix(const char dir[], const char fname[], gsl_matrix *m) {
   size_t size = strlen(dir) + strlen(fname) + 2;
   char *path = XLALMalloc(size);
   snprintf(path, size, "%s/%s", dir, fname);
@@ -140,7 +140,7 @@ int read_matrix(const char dir[], const char fname[], gsl_matrix *m) {
 }
 
 #ifdef LAL_HDF5_ENABLED
-int CheckVectorFromHDF5(LALH5File *file, const char name[], const double *v, size_t n) {
+static int CheckVectorFromHDF5(LALH5File *file, const char name[], const double *v, size_t n) {
   gsl_vector *temp = NULL;
   ReadHDF5RealVectorDataset(file, name, &temp);
 
@@ -154,7 +154,7 @@ int CheckVectorFromHDF5(LALH5File *file, const char name[], const double *v, siz
   return XLAL_SUCCESS;
 }
 
-int ReadHDF5RealVectorDataset(LALH5File *file, const char *name, gsl_vector **data) {
+static int ReadHDF5RealVectorDataset(LALH5File *file, const char *name, gsl_vector **data) {
 	LALH5Dataset *dset;
 	UINT4Vector *dimLength;
 	size_t n;
@@ -206,7 +206,7 @@ int ReadHDF5RealVectorDataset(LALH5File *file, const char *name, gsl_vector **da
 	return 0;
 }
 
-int ReadHDF5RealMatrixDataset(LALH5File *file, const char *name, gsl_matrix **data) {
+static int ReadHDF5RealMatrixDataset(LALH5File *file, const char *name, gsl_matrix **data) {
 	LALH5Dataset *dset;
 	UINT4Vector *dimLength;
 	size_t n1, n2;
@@ -259,7 +259,7 @@ int ReadHDF5RealMatrixDataset(LALH5File *file, const char *name, gsl_matrix **da
 	return 0;
 }
 
-int ReadHDF5LongVectorDataset(LALH5File *file, const char *name, gsl_vector_long **data) {
+static int ReadHDF5LongVectorDataset(LALH5File *file, const char *name, gsl_vector_long **data) {
 	LALH5Dataset *dset;
 	UINT4Vector *dimLength;
 	size_t n;
@@ -311,7 +311,7 @@ int ReadHDF5LongVectorDataset(LALH5File *file, const char *name, gsl_vector_long
 	return 0;
 }
 
-int ReadHDF5LongMatrixDataset(LALH5File *file, const char *name, gsl_matrix_long **data) {
+static int ReadHDF5LongMatrixDataset(LALH5File *file, const char *name, gsl_matrix_long **data) {
 	LALH5Dataset *dset;
 	UINT4Vector *dimLength;
 	size_t n1, n2;
@@ -364,7 +364,7 @@ int ReadHDF5LongMatrixDataset(LALH5File *file, const char *name, gsl_matrix_long
 	return 0;
 }
 
-void PrintInfoStringAttribute(LALH5File *file, const char attribute[]) {
+static void PrintInfoStringAttribute(LALH5File *file, const char attribute[]) {
   LALH5Generic gfile = {.file = file};
   int len = XLALH5AttributeQueryStringValue(NULL, 0, gfile, attribute) + 1;
   char *str = XLALMalloc(len);
@@ -373,7 +373,7 @@ void PrintInfoStringAttribute(LALH5File *file, const char attribute[]) {
   LALFree(str);
 }
 
-int ROM_check_version_number(LALH5File *file, 	INT4 version_major_in, INT4 version_minor_in, INT4 version_micro_in) {
+static int ROM_check_version_number(LALH5File *file, 	INT4 version_major_in, INT4 version_minor_in, INT4 version_micro_in) {
   INT4 version_major;
   INT4 version_minor;
   INT4 version_micro;
@@ -397,7 +397,7 @@ int ROM_check_version_number(LALH5File *file, 	INT4 version_major_in, INT4 versi
 // Helper function to perform tensor product spline interpolation with gsl
 // The gsl_vector v contains the ncx x ncy x ncz dimensional coefficient tensor in vector form
 // that should be interpolated and evaluated at position (eta,chi1,chi2).
-REAL8 Interpolate_Coefficent_Tensor(
+static REAL8 Interpolate_Coefficent_Tensor(
   gsl_vector *v,
   REAL8 eta,
   REAL8 chi1,
@@ -451,7 +451,7 @@ REAL8 Interpolate_Coefficent_Tensor(
 // Helper function to perform tensor product spline interpolation with gsl
 // The gsl_vector v contains the ncx x ncy dimensional coefficient matrix in vector form
 // that should be interpolated and evaluated at position (eta,chi).
-REAL8 Interpolate_Coefficent_Matrix(
+static REAL8 Interpolate_Coefficent_Matrix(
   gsl_vector *v,
   REAL8 eta,
   REAL8 chi,
@@ -489,7 +489,7 @@ REAL8 Interpolate_Coefficent_Matrix(
 }
 
 // Returns fitting coefficients for cubic y = c[0] + c[1]*x + c[2]*x**2 + c[3]*x**3
-gsl_vector *Fit_cubic(const gsl_vector *xi, const gsl_vector *yi) {
+static gsl_vector *Fit_cubic(const gsl_vector *xi, const gsl_vector *yi) {
   const int n = xi->size; // how many data points are we fitting
   const int p = 4;        // order of fitting polynomial
 
@@ -526,13 +526,13 @@ gsl_vector *Fit_cubic(const gsl_vector *xi, const gsl_vector *yi) {
 
 // This function determines whether x and y are approximately equal to a relative accuracy epsilon.
 // Note that x and y are compared to relative accuracy, so this function is not suitable for testing whether a value is approximately zero.
-bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon) {
+static bool approximately_equal(REAL8 x, REAL8 y, REAL8 epsilon) {
   return !gsl_fcmp(x, y, epsilon);
 }
 
 // If x and X are approximately equal to relative accuracy epsilon then set x = X.
 // If X = 0 then use an absolute comparison.
-void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
+static void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
   if (X != 0.0) {
     if (approximately_equal(*x, X, epsilon)) {
       XLAL_PRINT_INFO("Nudging value %.15g to %.15g\n", *x, X);
@@ -546,7 +546,7 @@ void nudge(REAL8 *x, REAL8 X, REAL8 epsilon) {
 }
 
 /* compute ringdown frequency for (2,2) mode from total mass and mass ratio */
-double SEOBNRROM_Ringdown_Mf_From_Mtot_q(
+static double SEOBNRROM_Ringdown_Mf_From_Mtot_q(
   const double Mtot_sec,
   const double q,
   const double chi1,
@@ -561,7 +561,7 @@ double SEOBNRROM_Ringdown_Mf_From_Mtot_q(
 }
 
 /* compute ringdown frequency for (2,2) mode from total mass and eta */
-double SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(
+static double SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(
   const double Mtot_sec,
   const double eta,
   const double chi1,

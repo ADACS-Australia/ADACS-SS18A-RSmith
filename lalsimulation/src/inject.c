@@ -82,8 +82,9 @@
 #include <lal/Units.h>
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
+#include <lal/LALSimulation.h>
 
-#include "LALSimIMRPhenomD.h"#include <lal/LALSimulation.h>
+#include "LALSimIMRPhenomD.h"
 
 char *program;
 int usage(void);

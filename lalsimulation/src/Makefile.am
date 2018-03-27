@@ -107,6 +107,7 @@ pkginclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
 	LALSimIMR.h \
+	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomC_internals.h \
 	LALSimIMRPhenomD_internals.h \
 	LALSimInspiral.h \
@@ -150,7 +151,6 @@ noinst_HEADERS = \
 	LALSimIMREOBNRv2.h \
 	LALSimIMREOBNRv2HMROMUtilities.c \
 	LALSimIMREOBNewtonianMultipole.c \
-	LALSimIMRPhenomD.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \

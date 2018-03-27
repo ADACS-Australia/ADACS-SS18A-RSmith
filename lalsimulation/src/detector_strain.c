@@ -132,8 +132,9 @@
 #include <lal/Date.h>
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
+#include <lal/LALSimulation.h>
 
-#include "LALSimIMRPhenomD.h"#include <lal/LALSimulation.h>
+#include "LALSimIMRPhenomD.h"
 
 #define INVALID_EPOCH { .gpsSeconds = LAL_INT4_MAX, .gpsNanoSeconds = LAL_INT4_MAX }
 

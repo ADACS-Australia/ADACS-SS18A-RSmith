@@ -108,8 +108,9 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>
+#include <lal/LALSimBlackHoleRingdown.h>
 
-#include "LALSimIMRPhenomD.h"#include <lal/LALSimBlackHoleRingdown.h>
+#include "LALSimIMRPhenomD.h"
 
 #define theta_invalid -100.0 /* invalid */
 #define a_invalid -100.0 /* invalid */

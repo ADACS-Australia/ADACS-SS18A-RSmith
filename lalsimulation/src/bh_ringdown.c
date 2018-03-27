@@ -104,8 +104,9 @@
 #include <lal/LALConstants.h>
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
+#include <lal/LALSimBlackHoleRingdown.h>
 
-#include "LALSimIMRPhenomD.h"#include <lal/LALSimBlackHoleRingdown.h>
+#include "LALSimIMRPhenomD.h"
 
 #define a_invalid -100.0 /* invalid */
 #define i_invalid -361.0 /* invalid */

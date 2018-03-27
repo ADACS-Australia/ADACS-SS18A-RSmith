@@ -24,8 +24,9 @@
 #include <lal/LALConstants.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALSimNeutronStar.h>
 
-#include "LALSimIMRPhenomD.h"#include <lal/LALSimNeutronStar.h>
+#include "LALSimIMRPhenomD.h"
 
 int usage(const char *program);
 int parseargs(int argc, char *argv[]);

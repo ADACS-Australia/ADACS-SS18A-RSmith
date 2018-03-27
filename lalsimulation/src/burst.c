@@ -145,8 +145,9 @@
 #include <lal/LALgetopt.h>
 #include <lal/Date.h>
 #include <lal/TimeSeries.h>
+#include <lal/LALSimBurst.h>
 
-#include "LALSimIMRPhenomD.h"#include <lal/LALSimBurst.h>
+#include "LALSimIMRPhenomD.h"
 
 #define XSTR(x) #x
 #define STR(x) XSTR(x)

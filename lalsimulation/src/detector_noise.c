@@ -143,8 +143,9 @@
 #include <lal/FrequencySeries.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALSimNoise.h>
+#include <lal/LALSimUtils.h>
 
-#include "LALSimIMRPhenomD.h"#include <lal/LALSimUtils.h>
+#include "LALSimIMRPhenomD.h"
 
 static LALUnit strainSquaredPerHertzUnit = { 0, { 0, 0, 1, 0, 0, 2, 0}, { 0, 0, 0, 0, 0, 0, 0} };
 
