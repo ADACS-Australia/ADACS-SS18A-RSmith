@@ -350,8 +350,8 @@ int IMRPhenomCGenerateFD(
   gsl_interp_accel *acc = gsl_interp_accel_alloc();
   size_t L =  ind_max - ind_min;
   gsl_spline *phiI = gsl_spline_alloc(gsl_interp_cspline, L);
-  REAL8 *freqs = XLALMalloc(L*sizeof(REAL8));
-  REAL8 *phis = XLALMalloc(L*sizeof(REAL8));
+  REAL8 *freqs = (REAL8 *)XLALMalloc(L*sizeof(REAL8));
+  REAL8 *phis = (REAL8 *)XLALMalloc(L*sizeof(REAL8));
 
   /* now generate the waveform */
   #pragma omp parallel for

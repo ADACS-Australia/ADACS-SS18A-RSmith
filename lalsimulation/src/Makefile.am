@@ -271,13 +271,13 @@ SIMCXXSRC = \
 	LALSimIMRPhenomC_internals.cpp \
 	LALSimIMRPhenomD_internals.cpp 
 if CUDA
-SIMCXXGENSRC = LALSimIMRPhenomP_cuda.cpp
+SIMCXXGENSRC = LALSimIMRPhenomP.cpp
 else
 SIMCXXGENSRC =
 endif
 SIMLIBCXX = liblalsimulationcxx.la
 
-noinst_LTLIBRARIES = $(SIMLIBCXX)
+lib_LTLIBRARIES += $(SIMLIBCXX)
 liblalsimulationcxx_la_SOURCES = $(SIMCXXSRC)
 nodist_liblalsimulationcxx_la_SOURCES = $(SIMCXXGENSRC)
 liblalsimulation_la_LIBADD = $(SIMLIBCXX)

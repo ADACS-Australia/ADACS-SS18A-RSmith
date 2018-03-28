@@ -709,6 +709,10 @@ int PhenomPCore(
   REAL8 finspin = 0.0;
   REAL8 f_final = 0.0;
 
+  UINT4 L_fCut = 0; // number of frequency points before we hit fCut
+  size_t n = 0;
+  UINT4 offset = 0; // Index shift between freqs and the frequency series
+
   switch (IMRPhenomP_version) {
     case IMRPhenomPv1_V:
       XLAL_PRINT_INFO("*** IMRPhenomP version 1: based on IMRPhenomC ***");
@@ -769,104 +773,102 @@ int PhenomPCore(
   XLAL_CHECK ( fCut > f_min, XLAL_EDOM, "fCut = %.2g/M <= f_min", fCut );
 
   /* Default f_max to params->fCut */
-  REAL8 f_max_prime = f_max ? f_max : fCut;
-  f_max_prime = (f_max_prime > fCut) ? fCut : f_max_prime;
-  if (f_max_prime <= f_min){
-    XLALPrintError("XLAL Error - %s: f_max <= f_min\n", __func__);
-    errcode = XLAL_EDOM;
-    goto cleanup;
-  }
-
-  /* Allocate hp, hc */
-
-  UINT4 L_fCut = 0; // number of frequency points before we hit fCut
-  size_t n = 0;
-  UINT4 offset = 0; // Index shift between freqs and the frequency series
-  if (deltaF > 0)  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
-    /* Set up output array with size closest power of 2 */
-    if (f_max_prime < f_max)  /* Resize waveform if user wants f_max larger than cutoff frequency */
-      n = NextPow2(f_max / deltaF) + 1;
-    else
-      n = NextPow2(f_max_prime / deltaF) + 1;
-
-    /* coalesce at t=0 */
-    XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / deltaF), XLAL_EFUNC,
-    "Failed to shift coalescence time by -1.0/deltaF with deltaF=%g.", deltaF); // shift by overall length in time
-
-    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
-    if(!*hptilde) {
-      errcode = XLAL_ENOMEM;
-      goto cleanup;
-    }
-    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
-    if(!*hctilde) {
-      errcode = XLAL_ENOMEM;
+  if(errcode==XLAL_SUCCESS){
+    REAL8 f_max_prime = f_max ? f_max : fCut;
+    f_max_prime = (f_max_prime > fCut) ? fCut : f_max_prime;
+    if (f_max_prime <= f_min){
+      XLALPrintError("XLAL Error - %s: f_max <= f_min\n", __func__);
+      errcode = XLAL_EDOM;
       goto cleanup;
     }
 
-    // Recreate freqs using only the lower and upper bounds
-    size_t i_min = (size_t) (f_min / deltaF);
-    size_t i_max = (size_t) (f_max_prime / deltaF);
-    freqs = XLALCreateREAL8Sequence(i_max - i_min);
-    if (!freqs) {
-      errcode = XLAL_EFUNC;
-      XLALPrintError("XLAL Error - %s: Frequency array allocation failed.", __func__);
-      goto cleanup;
-    }
-    for (UINT4 i=i_min; i<i_max; i++)
-      freqs->data[i-i_min] = i*deltaF;
-    L_fCut = freqs->length;
-    offset = i_min;
-  } else { // freqs contains frequencies with non-uniform spacing; we start at lowest given frequency
-    n = freqs_in->length;
+    /* Allocate hp, hc */
 
-    *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
-    if(!*hptilde) {
-      XLALPrintError("XLAL Error - %s: Failed to allocate frequency series for hptilde polarization with f_min=%f and %tu bins.", __func__, f_min, n);
-      errcode = XLAL_ENOMEM;
-      goto cleanup;
-    }
-    *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
-    if(!*hctilde) {
-      XLALPrintError("XLAL Error - %s: Failed to allocate frequency series for hctilde polarization with f_min=%f and %tu bins.", __func__, f_min, n);
-      errcode = XLAL_ENOMEM;
-      goto cleanup;
-    }
-    offset = 0;
+    if (deltaF > 0)  { // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
+      /* Set up output array with size closest power of 2 */
+      if (f_max_prime < f_max)  /* Resize waveform if user wants f_max larger than cutoff frequency */
+        n = NextPow2(f_max / deltaF) + 1;
+      else
+        n = NextPow2(f_max_prime / deltaF) + 1;
 
-    // Enforce that FS is strictly increasing
-    // (This is needed for phase correction towards the end of this function.)
-    for (UINT4 i=1; i<n; i++)
-    {
-      if (!(freqs_in->data[i] > freqs_in->data[i-1]))
-      {
-        XLALPrintError("XLAL Error - %s: Frequency sequence must be strictly increasing!\n",  __func__);
-        errcode = XLAL_EDOM;
+      /* coalesce at t=0 */
+      XLAL_CHECK(XLALGPSAdd(&ligotimegps_zero, -1. / deltaF), XLAL_EFUNC,
+      "Failed to shift coalescence time by -1.0/deltaF with deltaF=%g.", deltaF); // shift by overall length in time
+
+      *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
+      if(!*hptilde) {
+        errcode = XLAL_ENOMEM;
         goto cleanup;
       }
-    }
-
-    freqs = XLALCreateREAL8Sequence(n);
-    if (!freqs) {
-      XLALPrintError("XLAL Error - %s: Frequency array allocation failed.",  __func__);
-      errcode = XLAL_ENOMEM;
-      goto cleanup;
-    }
-    // Restrict sequence to frequencies <= fCut
-    for (UINT4 i=0; i<n; i++)
-      if (freqs_in->data[i] <= fCut) {
-        freqs->data[i] = freqs_in->data[i];
-        L_fCut++;
+      *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, 0.0, deltaF, &lalStrainUnit, n);
+      if(!*hctilde) {
+        errcode = XLAL_ENOMEM;
+        goto cleanup;
       }
-  }
 
+      // Recreate freqs using only the lower and upper bounds
+      size_t i_min = (size_t) (f_min / deltaF);
+      size_t i_max = (size_t) (f_max_prime / deltaF);
+      freqs = XLALCreateREAL8Sequence(i_max - i_min);
+      if (!freqs) {
+        errcode = XLAL_EFUNC;
+        XLALPrintError("XLAL Error - %s: Frequency array allocation failed.", __func__);
+        goto cleanup;
+      }
+      for (UINT4 i=i_min; i<i_max; i++)
+        freqs->data[i-i_min] = i*deltaF;
+      L_fCut = freqs->length;
+      offset = i_min;
+    } else { // freqs contains frequencies with non-uniform spacing; we start at lowest given frequency
+      n = freqs_in->length;
+
+      *hptilde = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
+      if(!*hptilde) {
+        XLALPrintError("XLAL Error - %s: Failed to allocate frequency series for hptilde polarization with f_min=%f and %tu bins.", __func__, f_min, n);
+        errcode = XLAL_ENOMEM;
+        goto cleanup;
+      }
+      *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, f_min, 0, &lalStrainUnit, n);
+      if(!*hctilde) {
+        XLALPrintError("XLAL Error - %s: Failed to allocate frequency series for hctilde polarization with f_min=%f and %tu bins.", __func__, f_min, n);
+        errcode = XLAL_ENOMEM;
+        goto cleanup;
+      }
+      offset = 0;
+
+      // Enforce that FS is strictly increasing
+      // (This is needed for phase correction towards the end of this function.)
+      for (UINT4 i=1; i<n; i++)
+      {
+        if (!(freqs_in->data[i] > freqs_in->data[i-1]))
+        {
+          XLALPrintError("XLAL Error - %s: Frequency sequence must be strictly increasing!\n",  __func__);
+          errcode = XLAL_EDOM;
+          goto cleanup;
+        }
+      }
+
+      freqs = XLALCreateREAL8Sequence(n);
+      if (!freqs) {
+        XLALPrintError("XLAL Error - %s: Frequency array allocation failed.",  __func__);
+        errcode = XLAL_ENOMEM;
+        goto cleanup;
+      }
+      // Restrict sequence to frequencies <= fCut
+      for (UINT4 i=0; i<n; i++)
+        if (freqs_in->data[i] <= fCut) {
+          freqs->data[i] = freqs_in->data[i];
+          L_fCut++;
+        }
+    }
+  }
 
   memset((*hptilde)->data->data, 0, n * sizeof(COMPLEX16));
   memset((*hctilde)->data->data, 0, n * sizeof(COMPLEX16));
   XLALUnitMultiply(&((*hptilde)->sampleUnits), &((*hptilde)->sampleUnits), &lalSecondUnit);
   XLALUnitMultiply(&((*hctilde)->sampleUnits), &((*hctilde)->sampleUnits), &lalSecondUnit);
 
-  phis = XLALMalloc(L_fCut*sizeof(REAL8)); // array for waveform phase
+  phis = (REAL8 *)XLALMalloc(L_fCut*sizeof(REAL8)); // array for waveform phase
   if(!phis) {
     errcode = XLAL_ENOMEM;
     goto cleanup;
@@ -882,8 +884,9 @@ int PhenomPCore(
     XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "init_phi_ins_prefactors() failed.");
   }
 
-  fprintf(stderr,"Calling AllFrequencies\n");
-  PhenomPCoreAllFrequencies(
+#ifdef LALSIMUMALTION_CUDA_ENABLED
+  fprintf(stderr,"Calling GPU version of AllFrequencies\n");
+  PhenomPCoreAllFrequencies_gpu(
      L_fCut,
      freqs,
      offset,
@@ -910,7 +913,38 @@ int PhenomPCore(
      *hctilde,
      phis,
      &errcode);
-  fprintf(stderr,"Returning from AllFrequencies\n");
+  fprintf(stderr,"Returning from GPU version of AllFrequencies\n");
+#else
+  fprintf(stderr,"Calling CPU version of AllFrequencies\n");
+  PhenomPCoreAllFrequencies_cpu(
+     L_fCut,
+     freqs,
+     offset,
+     eta,
+     chi1_l,
+     chi2_l,
+     chip,
+     distance,
+     M,
+     phic,
+     pAmp,
+     pPhi,
+     PCparams,
+     pn,
+     &angcoeffs,
+     &Y2m,
+     alphaNNLOoffset,
+     alpha0,
+     epsilonNNLOoffset,
+     IMRPhenomP_version,
+     &amp_prefactors,
+     &phi_prefactors,
+     *hptilde,
+     *hctilde,
+     phis,
+     &errcode);
+  fprintf(stderr,"Returning from CPU version of AllFrequencies\n");
+#endif
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
   /* We apply the same time shift to hptilde and hctilde based on the overall phasing returned by PhenomPCoreOneFrequency */
@@ -938,14 +972,16 @@ int PhenomPCore(
    }
 
   /* Time correction is t(f_final) = 1/(2pi) dphi/df (f_final) */
-  REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
-  /* Now correct phase */
-  for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
-    double f = freqs->data[i];
-    COMPLEX16 phase_corr = (cos(2*LAL_PI * f * t_corr) - I*sin(2*LAL_PI * f * t_corr));//cexp(-2*LAL_PI * I * f * t_corr);
-    int j = i + offset; // shift index for frequency series if needed
-    ((*hptilde)->data->data)[j] *= phase_corr;
-    ((*hctilde)->data->data)[j] *= phase_corr;
+  if(errcode==XLAL_SUCCESS){
+    REAL8 t_corr = gsl_spline_eval_deriv(phiI, f_final, acc) / (2*LAL_PI);
+    /* Now correct phase */
+    for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
+      double f = freqs->data[i];
+      COMPLEX16 phase_corr = (cos(2*LAL_PI * f * t_corr) - I*sin(2*LAL_PI * f * t_corr));//cexp(-2*LAL_PI * I * f * t_corr);
+      int j = i + offset; // shift index for frequency series if needed
+      ((*hptilde)->data->data)[j] *= phase_corr;
+      ((*hctilde)->data->data)[j] *= phase_corr;
+    }
   }
 
   cleanup:
@@ -982,7 +1018,7 @@ int PhenomPCore(
 
 /* ***************************** PhenomP internal functions *********************************/
 
-void PhenomPCoreAllFrequencies(UINT4 L_fCut,
+void PhenomPCoreAllFrequencies_cpu(UINT4 L_fCut,
         REAL8Sequence *freqs,
         UINT4 offset,
         const REAL8 eta,
@@ -1008,94 +1044,6 @@ void PhenomPCoreAllFrequencies(UINT4 L_fCut,
         COMPLEX16FrequencySeries *hctilde,
         REAL8 *phis,
         int   *errcode){
-#if defined(__cplusplus) && defined(__NVCC__)
-fprintf(stderr,"Entered cuda code.\n");
-
-  // Copy inputs to device
-  IMRPhenomDAmplitudeCoefficients pAmp;
-  IMRPhenomDPhaseCoefficients pPhi;
-  BBHPhenomCParams PCparams;
-  PNPhasingSeries pn;
-  NNLOanglecoeffs angcoeffs;
-  SpinWeightedSphericalHarmonic_l2 Y2m;
-  AmpInsPrefactors amp_prefactors;
-  PhiInsPrefactors phi_prefactors;
-  COMPLEX16FrequencySeries *hptilde;
-  COMPLEX16FrequencySeries *hctilde;
-  REAL8 *phis;
-  try{
-      throw_on_cuda_error(cudaMemcpy(&pAmp,          pAmp_host,          sizeof(IMRPhenomDAmplitudeCoefficients), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&pPhi,          pPhi_host,          sizeof(IMRPhenomDPhaseCoefficients),     cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&PCparams,      PCparams_host,      sizeof(BBHPhenomCParams),                cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&pn,            pn_host,            sizeof(PNPhasingSeries),                 cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&angcoeffs,     angcoeffs_host,     sizeof(NNLOanglecoeffs),                 cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&Y2m,           Y2m_host,           sizeof(SpinWeightedSphericalHarmonic_l2),cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&amp_prefactors,amp_prefactors_host,sizeof(AmpInsPrefactors),                cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&phi_prefactors,phi_prefactors_host,sizeof(PhiInsPrefactors),                cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMalloc((void **)&hptilde,L_fCut*sizeof(COMPLEX16)),lalsimulation_cuda_exception::MALLOC);
-      throw_on_cuda_error(cudaMalloc((void **)&hctilde,L_fCut*sizeof(COMPLEX16)),lalsimulation_cuda_exception::MALLOC);
-      throw_on_cuda_error(cudaMalloc((void **)&phis,   L_fCut*sizeof(REAL8)),    lalsimulation_cuda_exception::MALLOC);
-  }
-  catch(const lalsimulation_cuda_exception e){
-      e.process_exception();
-  }
-
-  // Run kernel
-  try{
-    int n_threads=256;
-    int grid_size=(L_fCut+(n_threads-1))/n_threads;
-    PhenomPCoreOneFrequency_cuda<<<grid_size,n_threads>>>(L_fCut,
-          freqs,
-          offset,
-          eta,
-          chi1_l,
-          chi2_l,
-          chip,
-          distance,
-          M,
-          phic,
-          &pAmp,
-          &pPhi,
-          &PCparams,
-          &pn,
-          &angcoeffs,
-          &Y2m,
-          alphaNNLOoffset,
-          alpha0,
-          epsilonNNLOoffset,
-          IMRPhenomP_version,
-          &amp_prefactors,
-          &phi_prefactors,
-          hptilde,
-          hctilde,
-          phis);
-  }
-  // Alter this to return an error code on kernel errorcode exception
-  catch(const lalsimulation_cuda_exception e){
-      e.process_exception();
-  }
-
-  // Offload results
-  try{
-      throw_on_cuda_error(cudaMemcpy(hptilde_host,hptilde,L_fCut*sizeof(COMPLEX16FrequencySeries),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(hctilde_host,hctilde,L_fCut*sizeof(COMPLEX16FrequencySeries),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(phis_host,   phis,   L_fCut*sizeof(REAL8),                   cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
-  }
-  catch(const lalsimulation_cuda_exception e){
-      e.process_exception();
-  }
-
-  // Clean-up
-  try{
-      throw_on_cuda_error(cudaFree(hptilde),lalsimulation_cuda_exception::FREE);
-      throw_on_cuda_error(cudaFree(hctilde),lalsimulation_cuda_exception::FREE);
-      throw_on_cuda_error(cudaFree(phis),   lalsimulation_cuda_exception::FREE);
-  }
-  catch(const lalsimulation_cuda_exception e){
-      e.process_exception();
-  }
-fprintf(stderr,"Leaving cuda code.\n");
-#else
   /*
     We can't call XLAL_ERROR() directly with OpenMP on.
     Keep track of return codes for each thread and in addition use flush to get out of
@@ -1111,7 +1059,7 @@ fprintf(stderr,"Leaving cuda code.\n");
 
 #pragma omp flush(*errcode)
     if (*errcode != XLAL_SUCCESS)
-      goto skip;
+      continue;
 
     /* Generate the waveform */
     int per_thread_errcode = PhenomPCoreOneFrequency(f,
@@ -1130,100 +1078,8 @@ fprintf(stderr,"Leaving cuda code.\n");
 
     phis[i] = phasing;
 
-      skip: /* this statement intentionally left blank */;
-  }
-#endif
-}
-
-#if defined(__cplusplus) && defined(__NVCC__)
-// These functions deal with any GPU exceptions, but should be called with the macros defined in the corresponding .hh file
-__host__ void _throw_on_generic_error(bool check_failure,int implementation_code, const std::string file, const std::string func, int line)
-{
-  if(check_failure) throw(lalsimulation_cuda_exception(GENERIC_CUDA_ERROR_CODE,implementation_code,file,func,line));
-}
-__host__ void _throw_on_cuda_error(cudaError_t cuda_code, int implementation_code, const std::string file, const std::string func, int line)
-{
-  if(cuda_code != cudaSuccess) throw(lalsimulation_cuda_exception((int)cuda_code,implementation_code,file,func,line));
-}
-__host__ void _check_for_cuda_error(int implementation_code,const std::string file, const std::string func, int line)
-{
-  try{
-    cudaError_t cuda_code = cudaPeekAtLastError();
-    if(cuda_code != cudaSuccess)
-        throw(lalsimulation_cuda_exception((int)cuda_code,implementation_code,"CUDA error detected after ",file,func,line));
-  }
-  catch(const lalsimulation_cuda_exception e){
-      e.process_exception();
   }
 }
-__host__ void _check_thread_sync(int implementation_code,const std::string file, const std::string func, int line)
-{
-  try{
-    cudaError_t cuda_code = cudaDeviceSynchronize();
-    if(cuda_code != cudaSuccess)
-        throw(lalsimulation_cuda_exception((int)cuda_code,implementation_code,"Threads not synchronised after ",file,func,line));
-  }
-  catch(const lalsimulation_cuda_exception e){
-      e.process_exception();
-  }
-}
-
-__global__
-void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
-        REAL8Sequence *freqs,
-        UINT4 offset,
-        const REAL8 eta,
-        const REAL8 chi1_l,
-        const REAL8 chi2_l,
-        const REAL8 chip,
-        const REAL8 distance,
-        const REAL8 M,
-        const REAL8 phic,
-        IMRPhenomDAmplitudeCoefficients *pAmp,
-        IMRPhenomDPhaseCoefficients *pPhi,
-        BBHPhenomCParams *PCparams,
-        PNPhasingSeries *pn,
-        NNLOanglecoeffs *angcoeffs,
-        SpinWeightedSphericalHarmonic_l2 *Y2m,
-        const REAL8 alphaNNLOoffset,
-        const REAL8 alpha0,
-        const REAL8 epsilonNNLOoffset,
-        IMRPhenomP_version_type IMRPhenomP_version,
-        AmpInsPrefactors *amp_prefactors,
-        PhiInsPrefactors *phi_prefactors,
-        COMPLEX16FrequencySeries *hptilde,
-        COMPLEX16FrequencySeries *hctilde,
-        REAL8 *phis){
-
-    UINT4 i = (UINT4)(blockIdx.x*blockDim.x + threadIdx.x);
-    if(i < L_fCut){
-
-      COMPLEX16 hp_val;
-      COMPLEX16 hc_val;
-      REAL8     phasing;
-      double    f = freqs->data[i];
-      int       j = i + offset; // shift index for frequency series if needed
-
-      // Generate the waveform
-      int per_thread_errcode = PhenomPCoreOneFrequency(f,
-                                                       eta, chi1_l, chi2_l, chip, distance, M, phic,
-                                                       pAmp, pPhi, PCparams, pn, angcoeffs, Y2m,
-                                                       alphaNNLOoffset - alpha0, epsilonNNLOoffset,
-                                                       &hp_val, &hc_val, &phasing, IMRPhenomP_version, amp_prefactors, phi_prefactors);
-
-      // THROW EXCEPTION HERE INSTEAD
-      //if (per_thread_errcode != XLAL_SUCCESS) {
-      //  (*errcode) = per_thread_errcode;
-      //}
-
-      (hptilde->data->data)[j] = hp_val;
-      (hctilde->data->data)[j] = hc_val;
-
-      phis[i] = phasing;
-
-  }
-}
-#endif
 
 /**
  * \f[

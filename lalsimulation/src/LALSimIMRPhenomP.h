@@ -102,6 +102,9 @@ int PhenomPCore(
 );
 
 /* Internal core function to calculate PhenomP polarizations for a single frequency. */
+#ifdef __cplusplus
+extern "C" {
+#endif
 int PhenomPCoreOneFrequency(
   const REAL8 fHz,                        /**< Frequency (Hz) */
   const REAL8 eta,                        /**< Symmetric mass ratio */
@@ -126,8 +129,11 @@ int PhenomPCoreOneFrequency(
   AmpInsPrefactors *amp_prefactors,       /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
   PhiInsPrefactors *phi_prefactors        /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/
 );
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void PhenomPCoreAllFrequencies(UINT4 L_fCut,
+void PhenomPCoreAllFrequencies_cpu(UINT4 L_fCut,
         REAL8Sequence *freqs,
         UINT4 offset,
         const REAL8 eta,
@@ -221,7 +227,6 @@ void nudge(REAL8 *x, REAL8 X, REAL8 epsilon);
 #include <string>
 #include <cuda_runtime.h>
 
-__global__
 void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
         REAL8Sequence *freqs,
         UINT4 offset,
