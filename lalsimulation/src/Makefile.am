@@ -182,8 +182,8 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBHamiltonian.h \
 	LALSimNRTunedTides.h
 
-
 lib_LTLIBRARIES = liblalsimulation.la
+
 
 liblalsimulation_la_SOURCES = \
 	LALSimBlackHoleRingdownPrec.c \
@@ -204,11 +204,6 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMREOBNRv2HMROM.c \
 	LALSimIMRLackeyTidal2013.c \
 	LALSimIMRPhenom.c \
-	LALSimIMRPhenomP.c \
-	LALSimIMRPhenomC.c \
-	LALSimIMRPhenomD.c \
-	LALSimIMRPhenomC_internals.c \
-	LALSimIMRPhenomD_internals.c \
 	LALSimIMRPhenomD_NRTidal.c \
 	LALSimIMRPSpinInspiralRD.c \
 	LALSimPhenSpinRingDown.c \
@@ -269,15 +264,18 @@ nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationVCSInfo.c \
 	$(END_OF_LIST)
 
+SIMCXXSRC = \
+	LALSimIMRPhenomP.cpp \
+	LALSimIMRPhenomC.cpp \
+	LALSimIMRPhenomD.cpp \
+	LALSimIMRPhenomC_internals.cpp \
+	LALSimIMRPhenomD_internals.cpp 
 if CUDA
-SIMCXXSRC = 
 SIMCXXGENSRC = LALSimIMRPhenomP_cuda.cpp
-SIMLIBCXX = liblalsimulationcxx.la
 else
-SIMCXXSRC =
-SIMCXXGENSRC = 
-SIMLIBCXX =
+SIMCXXGENSRC =
 endif
+SIMLIBCXX = liblalsimulationcxx.la
 
 noinst_LTLIBRARIES = $(SIMLIBCXX)
 liblalsimulationcxx_la_SOURCES = $(SIMCXXSRC)

@@ -70,6 +70,9 @@ AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
 
+# We require CXX to compile code that supports the cuda code
+LALSUITE_REQUIRE_CXX
+
 # Add CUDA as a conditional
 LALSUITE_WITH_CUDA
 

@@ -106,18 +106,18 @@ typedef double REAL8;   /**< Double precision real floating-point number (8 byte
 #ifndef SWIG /* exclude from SWIG interface */
 
 /* Use C99 complex numbers where available: C99, gcc with non-ANSI extensions */
-#if !defined(__cplusplus)
-# if __STDC_VERSION__ >= 199901L || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
+//#if !defined(__cplusplus)
+//# if __STDC_VERSION__ >= 199901L || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
 #  define _LAL_C99_COMPLEX_NUMBERS_
-# endif
-#endif
+//# endif
+//#endif
 
 #ifdef _LAL_C99_COMPLEX_NUMBERS_
 
 #include <complex.h>
 
-typedef float  complex COMPLEX8;	/**< Single-precision floating-point complex number (8 bytes total) */
-typedef double complex COMPLEX16;	/**< Double-precision floating-point complex number (16 bytes total) */
+typedef float  _Complex COMPLEX8;	/**< Single-precision floating-point complex number (8 bytes total) */
+typedef double _Complex COMPLEX16;	/**< Double-precision floating-point complex number (16 bytes total) */
 
 #define crectf(re, im) (((REAL4)(re)) + _Complex_I*((REAL4)(im)))	/**< Construct a COMPLEX8 from real and imaginary parts */
 #define crect(re, im)  (((REAL8)(re)) + _Complex_I*((REAL8)(im)))	/**< Construct a COMPLEX16 from real and imaginary parts */
