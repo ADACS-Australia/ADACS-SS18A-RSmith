@@ -704,7 +704,6 @@ int PhenomPCore(
   Y2m.Y21  = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2,  1);
   Y2m.Y22  = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 2,  2);
 
-
   REAL8 fCut = 0.0;
   REAL8 finspin = 0.0;
   REAL8 f_final = 0.0;

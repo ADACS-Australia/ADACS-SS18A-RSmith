@@ -271,7 +271,7 @@ SIMCXXSRC = \
 	LALSimIMRPhenomC_internals.cpp \
 	LALSimIMRPhenomD_internals.cpp 
 if CUDA
-SIMCXXGENSRC = LALSimIMRPhenomP.cpp
+SIMCXXGENSRC = LALSimIMRPhenomP_cuda.cpp
 else
 SIMCXXGENSRC =
 endif

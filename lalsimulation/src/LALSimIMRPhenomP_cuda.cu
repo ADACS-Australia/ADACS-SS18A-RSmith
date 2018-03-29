@@ -41,6 +41,7 @@
 #include "LALSimIMR.h"
 
 #include "LALSimIMRPhenomP.h"
+#include "LALSimIMRPhenomP_cuda.h"
 
 void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         REAL8Sequence *freqs,

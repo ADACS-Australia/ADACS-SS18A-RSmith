@@ -1,86 +1,19 @@
-//==============================================================================
-//
-// This code was developed as part of the Astronomy Data and Computing Services
-// (ADACS; https://adacs.org.au) 2018A Software Support program.
-//
-// Written by: Gregory B. Poole
-// Date:       September May 2018
-//
-// It is distributed under the MIT (Expat) License (see https://opensource.org/):
-//
-// Copyright (c) 2017 Astronomy Data and Computing Services (ADACS)
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-//
-//==============================================================================
+#ifndef _LALSIM_IMR_PHENOMP_CUDA_H
+#define _LALSIM_IMR_PHENOMP_CUDA_H
 
-#if !defined(SWIG) || defined(LALSIMULATION_CUDA_ENABLED)
-#ifndef _LALSIMIMRPHENOMP_CUDA_H
-#define _LALSIMIMRPHENOMP_CUDA_H
-#include <lal/Date.h>
-#include <lal/FrequencySeries.h>
-#include <lal/LALAtomicDatatypes.h>
-#include <lal/LALConstants.h>
-#include <lal/LALDatatypes.h>
-#include <lal/LALSimInspiral.h>
-#include <lal/Units.h>
-#include <lal/XLALError.h>
-#include <lal/SphericalHarmonics.h>
-#include <lal/Sequence.h>
 #include <lal/LALStdlib.h>
-#include <lal/LALStddef.h>
+#include <lal/LALSimIMR.h>
+#include <lal/LALConstants.h>
 
-#include "LALSimIMR.h"
+#include "LALSimIMRPhenomC_internals.h"
+#include "LALSimIMRPhenomD_internals.h"
 
-void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
-        REAL8Sequence *freqs,
-        UINT4 offset,
-        const REAL8 eta,
-        const REAL8 chi1_l,
-        const REAL8 chi2_l,
-        const REAL8 chip,
-        const REAL8 distance,
-        const REAL8 M,
-        const REAL8 phic,
-        IMRPhenomDAmplitudeCoefficients *pAmp,
-        IMRPhenomDPhaseCoefficients *pPhi,
-        BBHPhenomCParams *PCparams,
-        PNPhasingSeries *pn,
-        NNLOanglecoeffs *angcoeffs,
-        SpinWeightedSphericalHarmonic_l2 *Y2m,
-        const REAL8 alphaNNLOoffset,
-        const REAL8 alpha0,
-        const REAL8 epsilonNNLOoffset,
-        IMRPhenomP_version_type IMRPhenomP_version,
-        AmpInsPrefactors *amp_prefactors,
-        PhiInsPrefactors *phi_prefactors,
-        COMPLEX16FrequencySeries *hptilde,
-        COMPLEX16FrequencySeries *hctilde,
-        REAL8 *phis,
-        int   *errcode);
+#include <lal/FrequencySeries.h>
+#include <lal/LALSimInspiral.h>
 
-#ifdef __cplusplus
-#ifdef __NVCC__
 #include <string>
 #include <cuda_runtime.h>
 
-__global__
 void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
         REAL8Sequence *freqs,
         UINT4 offset,
@@ -124,7 +57,6 @@ __host__ void  notify_of_global_error (int error_code);
 #define throw_on_kernel_error(kernel_call,implementation_code)   { (kernel_call);_check_for_cuda_error(implementation_code, __FILE__, __func__, __LINE__); }
 #define check_thread_sync(implementation_code)                   { _check_thread_sync(implementation_code,__FILE__, __func__, __LINE__); }
 #define throw_on_global_error()                                  { _throw_on_global_error(__FILE__, __func__, __LINE__);}
-#endif
 
 // Define base exception classes
 #include <sstream>
@@ -275,6 +207,5 @@ class lalsimulation_cuda_exception : public lalsimulation_exception_base {
                      if(implementation_code!=GLOBAL) notify_of_global_error(cuda_code);
         }
 };
-#endif
-#endif
-#endif
+
+#endif	// of #ifndef _LALSIM_IMR_PHENOMP_CUDA_H
