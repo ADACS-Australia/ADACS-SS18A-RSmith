@@ -108,6 +108,7 @@ pkginclude_HEADERS = \
 	LALSimBurst.h \
 	LALSimIMR.h \
 	LALSimIMRPhenomD.h \
+	LALSimIMRPhenomP.h \
 	LALSimIMRPhenomC_internals.h \
 	LALSimIMRPhenomD_internals.h \
 	LALSimInspiral.h \
