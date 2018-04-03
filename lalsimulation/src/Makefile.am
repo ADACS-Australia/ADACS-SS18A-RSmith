@@ -182,9 +182,6 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBHamiltonian.h \
 	LALSimNRTunedTides.h
 
-lib_LTLIBRARIES = liblalsimulation.la
-
-
 liblalsimulation_la_SOURCES = \
 	LALSimBlackHoleRingdownPrec.c \
 	LALSimBlackHoleRingdown.c \
@@ -277,12 +274,13 @@ SIMCXXGENSRC =
 endif
 SIMLIBCXX = liblalsimulationcxx.la
 
-lib_LTLIBRARIES += $(SIMLIBCXX)
 liblalsimulationcxx_la_SOURCES = $(SIMCXXSRC)
 nodist_liblalsimulationcxx_la_SOURCES = $(SIMCXXGENSRC)
-liblalsimulation_la_LIBADD = $(SIMLIBCXX)
 
+liblalsimulation_la_LIBADD = $(SIMLIBCXX)
 liblalsimulation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
+
+lib_LTLIBRARIES = $(SIMLIBCXX) liblalsimulation.la
 
 CLEANFILES = $(SIMCXXGENSRC)
 
@@ -293,7 +291,7 @@ vcs_info_sources = LALSimulationVCSInfoHeader.h
 build_info_source = LALSimulationBuildInfoHeader.h
 build_info_dependencies = $(liblalsimulation_la_DEPENDENCIES)
 
-LDADD = liblalsimulation.la
+LDADD = $(SIMLIBCXX) liblalsimulation.la
 
 TESTS = \
 	lalsimulation_version \
