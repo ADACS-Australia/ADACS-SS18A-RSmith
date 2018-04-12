@@ -131,33 +131,6 @@ int PhenomPCoreOneFrequency(
   PhiInsPrefactors *phi_prefactors        /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/
 );
 
-void PhenomPCoreAllFrequencies_cpu(UINT4 L_fCut,
-        REAL8Sequence *freqs,
-        UINT4 offset,
-        const REAL8 eta,
-        const REAL8 chi1_l,
-        const REAL8 chi2_l,
-        const REAL8 chip,
-        const REAL8 distance,
-        const REAL8 M,
-        const REAL8 phic,
-        IMRPhenomDAmplitudeCoefficients *pAmp,
-        IMRPhenomDPhaseCoefficients *pPhi,
-        BBHPhenomCParams *PCparams,
-        PNPhasingSeries *pn,
-        NNLOanglecoeffs *angcoeffs,
-        SpinWeightedSphericalHarmonic_l2 *Y2m,
-        const REAL8 alphaNNLOoffset,
-        const REAL8 alpha0,
-        const REAL8 epsilonNNLOoffset,
-        IMRPhenomP_version_type IMRPhenomP_version,
-        AmpInsPrefactors *amp_prefactors,
-        PhiInsPrefactors *phi_prefactors,
-        COMPLEX16FrequencySeries *hptilde,
-        COMPLEX16FrequencySeries *hctilde,
-        REAL8 *phis,
-        int   *errcode);
-
 /* Simple 2PN version of L, without any spin terms expressed as a function of v */
 REAL8 L2PNR(
   const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
@@ -222,10 +195,13 @@ REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L
 }
 #endif
 
-#if defined(LALSIMULATION_CUDA_ENABLED)
+#include "config.h"
+//#if defined(LALSIMULATION_CUDA_ENABLED)
 #include <string>
 #include <cuda_runtime.h>
-void PhenomPCoreAllFrequencies_gpu(UINT4 L_fCut,
+
+extern "C" {
+void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         REAL8Sequence *freqs,
         UINT4 offset,
         const REAL8 eta,
@@ -251,6 +227,35 @@ void PhenomPCoreAllFrequencies_gpu(UINT4 L_fCut,
         COMPLEX16FrequencySeries *hctilde,
         REAL8 *phis,
         int   *errcode);
-#endif
+}
+
+//#else
+//void PhenomPCoreAllFrequencies_cpu(UINT4 L_fCut,
+//        REAL8Sequence *freqs,
+//        UINT4 offset,
+//        const REAL8 eta,
+//        const REAL8 chi1_l,
+//        const REAL8 chi2_l,
+//        const REAL8 chip,
+//        const REAL8 distance,
+//        const REAL8 M,
+//        const REAL8 phic,
+//        IMRPhenomDAmplitudeCoefficients *pAmp,
+//        IMRPhenomDPhaseCoefficients *pPhi,
+//        BBHPhenomCParams *PCparams,
+//        PNPhasingSeries *pn,
+//        NNLOanglecoeffs *angcoeffs,
+//        SpinWeightedSphericalHarmonic_l2 *Y2m,
+//        const REAL8 alphaNNLOoffset,
+//        const REAL8 alpha0,
+//        const REAL8 epsilonNNLOoffset,
+//        IMRPhenomP_version_type IMRPhenomP_version,
+//        AmpInsPrefactors *amp_prefactors,
+//        PhiInsPrefactors *phi_prefactors,
+//        COMPLEX16FrequencySeries *hptilde,
+//        COMPLEX16FrequencySeries *hctilde,
+//        REAL8 *phis,
+//        int   *errcode);
+//#endif
 
 #endif	// of #ifndef _LALSIM_IMR_PHENOMP_H

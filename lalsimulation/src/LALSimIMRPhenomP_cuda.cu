@@ -53,21 +53,21 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         const REAL8 distance,
         const REAL8 M,
         const REAL8 phic,
-        IMRPhenomDAmplitudeCoefficients *pAmp,
-        IMRPhenomDPhaseCoefficients *pPhi,
-        BBHPhenomCParams *PCparams,
-        PNPhasingSeries *pn,
-        NNLOanglecoeffs *angcoeffs,
-        SpinWeightedSphericalHarmonic_l2 *Y2m,
+        IMRPhenomDAmplitudeCoefficients *pAmp_host,
+        IMRPhenomDPhaseCoefficients *pPhi_host,
+        BBHPhenomCParams *PCparams_host,
+        PNPhasingSeries *pn_host,
+        NNLOanglecoeffs *angcoeffs_host,
+        SpinWeightedSphericalHarmonic_l2 *Y2m_host,
         const REAL8 alphaNNLOoffset,
         const REAL8 alpha0,
         const REAL8 epsilonNNLOoffset,
         IMRPhenomP_version_type IMRPhenomP_version,
-        AmpInsPrefactors *amp_prefactors,
-        PhiInsPrefactors *phi_prefactors,
-        COMPLEX16FrequencySeries *hptilde,
-        COMPLEX16FrequencySeries *hctilde,
-        REAL8 *phis,
+        AmpInsPrefactors *amp_prefactors_host,
+        PhiInsPrefactors *phi_prefactors_host,
+        COMPLEX16FrequencySeries *hptilde_host,
+        COMPLEX16FrequencySeries *hctilde_host,
+        REAL8 *phis_host,
         int   *errcode){
 fprintf(stderr,"Entered cuda code.\n");
 
@@ -104,6 +104,7 @@ fprintf(stderr,"Entered cuda code.\n");
   try{
     int n_threads=256;
     int grid_size=(L_fCut+(n_threads-1))/n_threads;
+    /*
     PhenomPCoreOneFrequency_cuda<<<grid_size,n_threads>>>(L_fCut,
           freqs,
           offset,
@@ -129,6 +130,7 @@ fprintf(stderr,"Entered cuda code.\n");
           hptilde,
           hctilde,
           phis);
+          */
   }
   // Alter this to return an error code on kernel errorcode exception
   catch(const lalsimulation_cuda_exception e){
@@ -188,8 +190,19 @@ __host__ void _check_thread_sync(int implementation_code,const std::string file,
       e.process_exception();
   }
 }
+__host__ void _throw_on_global_error(const std::string file, const std::string func, int line)
+{
+  int error_code=0;
+  //MPI_Allreduce(MPI_IN_PLACE,&error_code,1,MPI_INT,MPI_MAX,run_globals.mpi_comm);
+  //if(error_code!=0) throw(meraxes_cuda_exception(0,meraxes_cuda_exception::GLOBAL,file,func,line));
+}
+__host__ void notify_of_global_error(int error_code)
+{
+  int result=(int)error_code;
+  //MPI_Allreduce(MPI_IN_PLACE,&result,1,MPI_INT,MPI_MAX,run_globals.mpi_comm);
+}
 
-void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
+__device__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
         REAL8Sequence *freqs,
         UINT4 offset,
         const REAL8 eta,
@@ -225,11 +238,11 @@ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
       int       j = i + offset; // shift index for frequency series if needed
 
       // Generate the waveform
-      int per_thread_errcode = PhenomPCoreOneFrequency(f,
-                                                       eta, chi1_l, chi2_l, chip, distance, M, phic,
-                                                       pAmp, pPhi, PCparams, pn, angcoeffs, Y2m,
-                                                       alphaNNLOoffset - alpha0, epsilonNNLOoffset,
-                                                       &hp_val, &hc_val, &phasing, IMRPhenomP_version, amp_prefactors, phi_prefactors);
+      //int per_thread_errcode = PhenomPCoreOneFrequency(f,
+      //                                                 eta, chi1_l, chi2_l, chip, distance, M, phic,
+      //                                                 pAmp, pPhi, PCparams, pn, angcoeffs, Y2m,
+      //                                                 alphaNNLOoffset - alpha0, epsilonNNLOoffset,
+      //                                                 &hp_val, &hc_val, &phasing, IMRPhenomP_version, amp_prefactors, phi_prefactors);
 
       // THROW EXCEPTION HERE INSTEAD
       //if (per_thread_errcode != XLAL_SUCCESS) {

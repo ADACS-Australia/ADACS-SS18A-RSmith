@@ -107,10 +107,6 @@ pkginclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
 	LALSimBurst.h \
 	LALSimIMR.h \
-	LALSimIMRPhenomD.h \
-	LALSimIMRPhenomP.h \
-	LALSimIMRPhenomC_internals.h \
-	LALSimIMRPhenomD_internals.h \
 	LALSimInspiral.h \
 	LALSimInspiralPrecess.h \
 	LALSimInspiralTestGRParams.h \
@@ -152,6 +148,11 @@ noinst_HEADERS = \
 	LALSimIMREOBNRv2.h \
 	LALSimIMREOBNRv2HMROMUtilities.c \
 	LALSimIMREOBNewtonianMultipole.c \
+	LALSimIMRPhenomC_internals.h \
+	LALSimIMRPhenomD.h \
+	LALSimIMRPhenomD_internals.h \
+	LALSimIMRPhenomP.h \
+	LALSimIMRPhenomP_cuda.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
@@ -183,7 +184,14 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBHamiltonian.h \
 	LALSimNRTunedTides.h
 
+lib_LTLIBRARIES = liblalsimulation.la
+
 liblalsimulation_la_SOURCES = \
+	LALSimIMRPhenomC.cpp \
+	LALSimIMRPhenomD.cpp \
+	LALSimIMRPhenomP.cpp \
+	LALSimIMRPhenomC_internals.cpp \
+	LALSimIMRPhenomD_internals.cpp \
 	LALSimBlackHoleRingdownPrec.c \
 	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \
@@ -254,49 +262,20 @@ liblalsimulation_la_SOURCES = \
 	LALSimFindAttachTime.c \
 	LALSimIMRNRSur4d2s.c \
 	LALSimIMRNRSur7dq2.c \
-	LALSimUniversalRelations.c \
-	$(END_OF_LIST)
+	LALSimUniversalRelations.c
+
+if CUDA
+liblalsimulation_la_SOURCES += LALSimIMRPhenomP_cuda.cu
+endif
+
+LDADD = liblalsimulation.la
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \
 	LALSimulationVCSInfo.c \
 	$(END_OF_LIST)
 
-SIMCXXSRC = \
-	LALSimIMRPhenomP.cpp \
-	LALSimIMRPhenomC.cpp \
-	LALSimIMRPhenomD.cpp \
-	LALSimIMRPhenomC_internals.cpp \
-	LALSimIMRPhenomD_internals.cpp 
-if CUDA
-SIMCXXGENSRC = LALSimIMRPhenomP_cuda.cpp
-else
-SIMCXXGENSRC =
-endif
-SIMLIBCXX = liblalsimulationcxx.la
-
-liblalsimulationcxx_la_SOURCES = $(SIMCXXSRC)
-nodist_liblalsimulationcxx_la_SOURCES = $(SIMCXXGENSRC)
-
-liblalsimulation_la_LIBADD = $(SIMLIBCXX)
 liblalsimulation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
-
-lib_LTLIBRARIES = $(SIMLIBCXX) liblalsimulation.la
-
-CLEANFILES = $(SIMCXXGENSRC)
-
-DISTCLEANFILES = config.h
-
-vcs_build_info_source = LALSimulationVCSInfo.c
-vcs_info_sources = LALSimulationVCSInfoHeader.h
-build_info_source = LALSimulationBuildInfoHeader.h
-build_info_dependencies = $(liblalsimulation_la_DEPENDENCIES)
-
-LDADD = $(SIMLIBCXX) liblalsimulation.la
-
-TESTS = \
-	lalsimulation_version \
-	$(END_OF_LIST)
 
 lalsim_bh_qnmode_SOURCES = bh_qnmode.c
 lalsim_bh_sphwf_SOURCES = bh_sphwf.c
@@ -328,3 +307,14 @@ EXTRA_DIST = \
 	lalsimulation_inject.svg \
 	$(NOISEPSDFILES) \
 	$(EOSDATAFILES)
+
+DISTCLEANFILES = config.h
+
+vcs_build_info_source = LALSimulationVCSInfo.c
+vcs_info_sources = LALSimulationVCSInfoHeader.h
+build_info_source = LALSimulationBuildInfoHeader.h
+build_info_dependencies = $(liblalsimulation_la_DEPENDENCIES)
+
+TESTS = \
+	lalsimulation_version \
+	$(END_OF_LIST)

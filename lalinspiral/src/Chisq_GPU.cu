@@ -58,7 +58,8 @@ chisqKernel( REAL4* g_chisq, COMPLEX8* g_q, COMPLEX8 *g_data,
   for (unsigned l=0; l < numChisqBins; l++)
     {
       unsigned j= blockIdx.x * blockDim.x + threadIdx.x;
-      
+      assert(0); // The following code is commented out because of a compiler error conflict
+/*
       REAL4 Xl = crealf(g_data[l*numPoints + j]);
       REAL4 Yl = cimagf(g_data[l*numPoints + j]);
       
@@ -66,8 +67,8 @@ chisqKernel( REAL4* g_chisq, COMPLEX8* g_q, COMPLEX8 *g_data,
 	(chisqNorm * crealf(g_q[j]) / (REAL4) (numChisqBins));
       REAL4 deltaYl = chisqNorm * Yl -
 	(chisqNorm * cimagf(g_q[j]) / (REAL4) (numChisqBins));
-      
       g_chisq[j] += deltaXl * deltaXl + deltaYl * deltaYl;
+*/
     }
 }
 

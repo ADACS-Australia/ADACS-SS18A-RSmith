@@ -1,3 +1,5 @@
+#if !defined(SWIG) || defined(LALSIMULATION_CUDA_ENABLED)
+
 #ifndef _LALSIM_IMR_PHENOMP_CUDA_H
 #define _LALSIM_IMR_PHENOMP_CUDA_H
 
@@ -5,6 +7,7 @@
 #include <lal/LALSimIMR.h>
 #include <lal/LALConstants.h>
 
+#include "LALSimIMRPhenomP.h"
 #include "LALSimIMRPhenomC_internals.h"
 #include "LALSimIMRPhenomD_internals.h"
 
@@ -14,7 +17,7 @@
 #include <string>
 #include <cuda_runtime.h>
 
-void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
+__device__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
         REAL8Sequence *freqs,
         UINT4 offset,
         const REAL8 eta,
@@ -209,3 +212,4 @@ class lalsimulation_cuda_exception : public lalsimulation_exception_base {
 };
 
 #endif	// of #ifndef _LALSIM_IMR_PHENOMP_CUDA_H
+#endif
