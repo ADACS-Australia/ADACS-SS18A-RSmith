@@ -887,7 +887,7 @@ int PhenomPCore(
     XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "init_phi_ins_prefactors() failed.");
   }
 
-//#if defined(LALSIMULATION_CUDA_ENABLED)
+#if defined(LALSIMULATION_CUDA_ENABLED)
   fprintf(stderr,"Calling GPU version of AllFrequencies\n");
   PhenomPCoreAllFrequencies_cuda(
      L_fCut,
@@ -917,37 +917,37 @@ int PhenomPCore(
      phis,
      &errcode);
   fprintf(stderr,"Returning from GPU version of AllFrequencies\n");
-//#else
-//  fprintf(stderr,"Calling CPU version of AllFrequencies2\n");
-//  PhenomPCoreAllFrequencies_cpu(
-//     L_fCut,
-//     freqs,
-//     offset,
-//     eta,
-//     chi1_l,
-//     chi2_l,
-//     chip,
-//     distance,
-//     M,
-//     phic,
-//     pAmp,
-//     pPhi,
-//     PCparams,
-//     pn,
-//     &angcoeffs,
-//     &Y2m,
-//     alphaNNLOoffset,
-//     alpha0,
-//     epsilonNNLOoffset,
-//     IMRPhenomP_version,
-//     &amp_prefactors,
-//     &phi_prefactors,
-//     *hptilde,
-//     *hctilde,
-//     phis,
-//     &errcode);
-//  fprintf(stderr,"Returning from CPU version of AllFrequencies2\n");
-//#endif
+#else
+  fprintf(stderr,"Calling CPU version of AllFrequencies2\n");
+  PhenomPCoreAllFrequencies_cpu(
+     L_fCut,
+     freqs,
+     offset,
+     eta,
+     chi1_l,
+     chi2_l,
+     chip,
+     distance,
+     M,
+     phic,
+     pAmp,
+     pPhi,
+     PCparams,
+     pn,
+     &angcoeffs,
+     &Y2m,
+     alphaNNLOoffset,
+     alpha0,
+     epsilonNNLOoffset,
+     IMRPhenomP_version,
+     &amp_prefactors,
+     &phi_prefactors,
+     *hptilde,
+     *hctilde,
+     phis,
+     &errcode);
+  fprintf(stderr,"Returning from CPU version of AllFrequencies2\n");
+#endif
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
   /* We apply the same time shift to hptilde and hctilde based on the overall phasing returned by PhenomPCoreOneFrequency */

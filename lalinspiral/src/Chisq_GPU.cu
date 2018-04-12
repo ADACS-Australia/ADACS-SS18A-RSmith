@@ -28,6 +28,7 @@
  */
 
 #include <stdio.h>
+#include <assert.h>
 #include <cufft.h>
 #include <lal/LALAtomicDatatypes.h>
 

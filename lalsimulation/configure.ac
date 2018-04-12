@@ -153,7 +153,7 @@ LALSUITE_USE_DOXYGEN
 
 # define if CUDA is enabled
 if test "${cuda}" = "true"; then
-  AC_DEFINE([LALSIMUMALTION_CUDA_ENABLED],[1],[Define if using cuda library])
+  AC_DEFINE([LALSIMULATION_CUDA_ENABLED],[1],[Define if using cuda library])
 fi
 
 # add gcc specific flags
