@@ -888,7 +888,6 @@ int PhenomPCore(
   }
 
 #if defined(LALSIMULATION_CUDA_ENABLED)
-  fprintf(stderr,"Calling GPU version of AllFrequencies\n");
   PhenomPCoreAllFrequencies_cuda(
      L_fCut,
      freqs,
@@ -916,9 +915,7 @@ int PhenomPCore(
      *hctilde,
      phis,
      &errcode);
-  fprintf(stderr,"Returning from GPU version of AllFrequencies\n");
 #else
-  fprintf(stderr,"Calling CPU version of AllFrequencies2\n");
   PhenomPCoreAllFrequencies_cpu(
      L_fCut,
      freqs,
@@ -946,7 +943,6 @@ int PhenomPCore(
      *hctilde,
      phis,
      &errcode);
-  fprintf(stderr,"Returning from CPU version of AllFrequencies2\n");
 #endif
 
   /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */

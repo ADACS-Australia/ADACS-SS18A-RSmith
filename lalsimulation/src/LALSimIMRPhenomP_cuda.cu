@@ -69,7 +69,6 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         COMPLEX16FrequencySeries *hctilde_host,
         REAL8 *phis_host,
         int   *errcode){
-fprintf(stderr,"Entered cuda code.\n");
 
   // Copy inputs to device
   IMRPhenomDAmplitudeCoefficients pAmp;
@@ -156,7 +155,6 @@ fprintf(stderr,"Entered cuda code.\n");
   catch(const lalsimulation_cuda_exception e){
       e.process_exception();
   }
-fprintf(stderr,"Leaving cuda code.\n");
 }
 
 // These functions deal with any GPU exceptions, but should be called with the macros defined in the corresponding .hh file
