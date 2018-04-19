@@ -1,7 +1,5 @@
-#if !defined(SWIG) || defined(LALSIMULATION_CUDA_ENABLED)
-
-#ifndef _LALSIM_IMR_PHENOMP_CUDA_H
-#define _LALSIM_IMR_PHENOMP_CUDA_H
+#ifndef LALSIMIMRPHENOMP_SHARED_H
+#define LALSIMIMRPHENOMP_SHARED_H
 
 #include <lal/LALStdlib.h>
 #include <lal/LALSimIMR.h>
@@ -14,10 +12,48 @@
 #include <lal/FrequencySeries.h>
 #include <lal/LALSimInspiral.h>
 
+#if defined(LALSIMULATION_CUDA_ENABLED)
+#define LALSIMULATION_CUDA_DEVICE __device__
+#define LALSIMULATION_CUDA_GLOBAL __global__
+#else
+#define LALSIMULATION_CUDA_DEVICE 
+#define LALSIMULATION_CUDA_GLOBAL 
+#endif
+
+#if defined(LALSIMULATION_CUDA_ENABLED)
+
+#include <sstream>
 #include <string>
 #include <cuda_runtime.h>
 
-__device__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
+void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
+        REAL8Sequence *freqs,
+        UINT4 offset,
+        const REAL8 eta,
+        const REAL8 chi1_l,
+        const REAL8 chi2_l,
+        const REAL8 chip,
+        const REAL8 distance,
+        const REAL8 M,
+        const REAL8 phic,
+        IMRPhenomDAmplitudeCoefficients *pAmp_host,
+        IMRPhenomDPhaseCoefficients *pPhi_host,
+        BBHPhenomCParams *PCparams_host,
+        PNPhasingSeries *pn_host,
+        NNLOanglecoeffs *angcoeffs_host,
+        SpinWeightedSphericalHarmonic_l2 *Y2m_host,
+        const REAL8 alphaNNLOoffset,
+        const REAL8 alpha0,
+        const REAL8 epsilonNNLOoffset,
+        IMRPhenomP_version_type IMRPhenomP_version,
+        AmpInsPrefactors *amp_prefactors_host,
+        PhiInsPrefactors *phi_prefactors_host,
+        COMPLEX16FrequencySeries *hptilde_host,
+        COMPLEX16FrequencySeries *hctilde_host,
+        REAL8 *phis_host,
+        int   *errcode);
+
+__global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
         REAL8Sequence *freqs,
         UINT4 offset,
         const REAL8 eta,
@@ -52,6 +88,9 @@ __host__ void  _check_thread_sync     (int implementation_code, const std::strin
 __host__ void  _throw_on_global_error (const std::string file, const std::string func, int line);
 __host__ void  notify_of_global_error (int error_code);
 
+// Device-side exception-handling 
+__device__ void inline cause_cuda_error();
+
 // Wrap exception-handling calls with these macros to add exception location information to the error messages
 // N.B.: The ',' in the execution configuration part of a CUDA kernel call confuses the pre-processor ... so
 //       make sure to add ()'s around the kernel call when using throw_on_kernel_error()
@@ -62,8 +101,6 @@ __host__ void  notify_of_global_error (int error_code);
 #define throw_on_global_error()                                  { _throw_on_global_error(__FILE__, __func__, __LINE__);}
 
 // Define base exception classes
-#include <sstream>
-#include <string>
 #define  GENERIC_CUDA_ERROR_CODE 160614
 class lalsimulation_exception_base : public std::exception {
     protected:
@@ -152,11 +189,7 @@ class lalsimulation_cuda_exception : public lalsimulation_exception_base {
             FREE,
             MEMCPY,
             SYNC,
-            KERNEL_CMPLX_AX,
-            KERNEL_SET_ARRAY,
-            KERNEL_FILTER,
-            KERNEL_CHECK,
-            KERNEL_MAIN_LOOP
+            KERNEL_PHENOMPCOREONEFREQUENCY
             };
     private:
         std::string _set_message(int code){
@@ -181,16 +214,8 @@ class lalsimulation_cuda_exception : public lalsimulation_exception_base {
             // The following kernel error messages are meant to have
             //   modifiers placed in front of them to descriminate
             //   between CUDA errors and thread-sync errors.
-            case KERNEL_CMPLX_AX:
-                return("scalar-times-complex-vector kernel execution");
-            case KERNEL_SET_ARRAY:
-                return("initialize-vector-to-constant kernel execution");
-            case KERNEL_FILTER:
-                return("filter/convolution kernel execution");
-            case KERNEL_CHECK:
-                return("post-convolution-sanity-check kernel execution");
-            case KERNEL_MAIN_LOOP:
-                return("main find_HII_bubbles() kernel execution");
+            case KERNEL_PHENOMPCOREONEFREQUENCY:
+                return("PhenomPCoreOneFrequency_cuda kernel execution");
             // This should never happen.
             default:
                 return("Undocumented CUDA error.");
@@ -211,5 +236,103 @@ class lalsimulation_cuda_exception : public lalsimulation_exception_base {
         }
 };
 
-#endif	// of #ifndef _LALSIM_IMR_PHENOMP_CUDA_H
+#endif
+
+LALSIMULATION_CUDA_DEVICE int PhenomPCoreOneFrequency(
+  const REAL8 fHz,                            
+  const REAL8 eta,                            
+  const REAL8 chi1_l,                         
+  const REAL8 chi2_l,                         
+  const REAL8 chip,                           
+  const REAL8 distance,                       
+  const REAL8 M,                              
+  const REAL8 phic,                           
+  IMRPhenomDAmplitudeCoefficients *pAmp,      
+  IMRPhenomDPhaseCoefficients *pPhi,          
+  BBHPhenomCParams *PCparams,                 
+  PNPhasingSeries *PNparams,                  
+  NNLOanglecoeffs *angcoeffs,                 
+  SpinWeightedSphericalHarmonic_l2 *Y2m,      
+  const REAL8 alphaoffset,                    
+  const REAL8 epsilonoffset,                  
+  COMPLEX16 *hp,                              
+  COMPLEX16 *hc,                              
+  REAL8 *phasing,                             
+  IMRPhenomP_version_type IMRPhenomP_version, 
+  AmpInsPrefactors *amp_prefactors,           
+  PhiInsPrefactors *phi_prefactors);
+
+/* Simple 2PN version of L, without any spin terms expressed as a function of v */
+LALSIMULATION_CUDA_DEVICE REAL8 L2PNR(
+  const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
+  const REAL8 eta  /**< Symmetric mass-ratio */
+);
+
+LALSIMULATION_CUDA_DEVICE REAL8 L2PNR_v1(
+  const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
+  const REAL8 eta  /**< Symmetric mass-ratio */
+);
+LALSIMULATION_CUDA_DEVICE void WignerdCoefficients(
+  REAL8 *cos_beta_half,   /**< Output: cos(beta/2) */
+  REAL8 *sin_beta_half,   /**< Output: sin(beta/2) */
+  const REAL8 v,          /**< Cubic root of (Pi * Frequency (geometric)) */
+  const REAL8 SL,         /**< Dimensionfull aligned spin */
+  const REAL8 eta,        /**< Symmetric mass-ratio */
+  const REAL8 Sp          /**< Dimensionfull spin component in the orbital plane */
+);
+
+LALSIMULATION_CUDA_DEVICE void WignerdCoefficients_SmallAngleApproximation(
+  REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
+  REAL8 *sin_beta_half, /**< Output: sin(beta/2) */
+  const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
+  const REAL8 SL,       /**< Dimensionfull aligned spin */
+  const REAL8 eta,      /**< Symmetric mass-ratio */
+  const REAL8 Sp        /**< Dimensionfull spin component in the orbital plane */
+);
+
+LALSIMULATION_CUDA_DEVICE int IMRPhenomCGenerateAmpPhase( REAL8 *amplitude, REAL8 *phasing, REAL8 f, REAL8 eta, const BBHPhenomCParams *params);
+
+/**
+ * must be called before the first usage of *p
+ */
+LALSIMULATION_CUDA_DEVICE int init_useful_powers(UsefulPowers * p, REAL8 number);
+LALSIMULATION_CUDA_DEVICE double IMRPhenDAmplitude(double f, IMRPhenomDAmplitudeCoefficients *p, UsefulPowers *powers_of_f, AmpInsPrefactors * prefactors);
+LALSIMULATION_CUDA_DEVICE double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, UsefulPowers *powers_of_f, PhiInsPrefactors * prefactors);
+LALSIMULATION_CUDA_DEVICE REAL8 wPlus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params );
+LALSIMULATION_CUDA_DEVICE REAL8 wMinus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params );
+LALSIMULATION_CUDA_DEVICE bool StepFunc_boolean(const double t, const double t1);
+LALSIMULATION_CUDA_DEVICE double AmpInsAnsatz(double Mf, UsefulPowers * powers_of_Mf, AmpInsPrefactors * prefactors);
+LALSIMULATION_CUDA_DEVICE double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p);
+LALSIMULATION_CUDA_DEVICE double AmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
+LALSIMULATION_CUDA_DEVICE double DAmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
+LALSIMULATION_CUDA_DEVICE double PhiInsAnsatzInt(double f, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
+LALSIMULATION_CUDA_DEVICE double PhiMRDAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p);
+LALSIMULATION_CUDA_DEVICE double PhiIntAnsatz(double f, IMRPhenomDPhaseCoefficients *p);
+
+
+/**
+ * calc square of number without floating point 'pow'
+ */
+LALSIMULATION_CUDA_DEVICE inline double pow_2_of(double number)
+{
+    return (number*number);
+}
+
+/**
+ * calc cube of number without floating point 'pow'
+ */
+LALSIMULATION_CUDA_DEVICE inline double pow_3_of(double number)
+{
+    return (number*number*number);
+}
+
+/**
+ * calc fourth power of number without floating point 'pow'
+ */
+LALSIMULATION_CUDA_DEVICE inline double pow_4_of(double number)
+{
+    double pow2 = pow_2_of(number);
+    return pow2 * pow2;
+}
+
 #endif

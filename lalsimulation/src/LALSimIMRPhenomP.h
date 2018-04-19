@@ -105,61 +105,6 @@ int PhenomPCore(
    atan2(x, y) */
 REAL8 atan2tol(REAL8 x, REAL8 y, REAL8 tol);
 
-/* Internal core function to calculate PhenomP polarizations for a single frequency. */
-int PhenomPCoreOneFrequency(
-  const REAL8 fHz,                        /**< Frequency (Hz) */
-  const REAL8 eta,                        /**< Symmetric mass ratio */
-  const REAL8 chi1_l,                     /**< Dimensionless aligned spin on companion 1 */
-  const REAL8 chi2_l,                     /**< Dimensionless aligned spin on companion 2 */
-  const REAL8 chip,                       /**< Dimensionless spin in the orbital plane */
-  const REAL8 distance,                   /**< Distance of source (m) */
-  const REAL8 M,                          /**< Total mass (Solar masses) */
-  const REAL8 phic,                       /**< Orbital phase at the peak of the underlying non precessing model (rad) */
-  IMRPhenomDAmplitudeCoefficients *pAmp,  /**< Internal IMRPhenomD amplitude coefficients */
-  IMRPhenomDPhaseCoefficients *pPhi,      /**< Internal IMRPhenomD phase coefficients */
-  BBHPhenomCParams *PCparams,             /**< Internal PhenomC parameters */
-  PNPhasingSeries *PNparams,              /**< PN inspiral phase coefficients */
-  NNLOanglecoeffs *angcoeffs,             /**< Struct with PN coeffs for the NNLO angles */
-  SpinWeightedSphericalHarmonic_l2 *Y2m,  /**< Struct of l=2 spherical harmonics of spin weight -2 */
-  const REAL8 alphaoffset,                /**< f_ref dependent offset for alpha angle (azimuthal precession angle) */
-  const REAL8 epsilonoffset,              /**< f_ref dependent offset for epsilon angle */
-  COMPLEX16 *hp,                          /**< Output: tilde h_+ */
-  COMPLEX16 *hc,                          /**< Output: tilde h_+ */
-  REAL8 *phasing,                         /**< Output: overall phasing */
-  IMRPhenomP_version_type IMRPhenomP_version,         /**< Version number: 1 uses IMRPhenomC, 2 uses IMRPhenomD */
-  AmpInsPrefactors *amp_prefactors,       /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
-  PhiInsPrefactors *phi_prefactors        /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/
-);
-
-/* Simple 2PN version of L, without any spin terms expressed as a function of v */
-REAL8 L2PNR(
-  const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
-  const REAL8 eta  /**< Symmetric mass-ratio */
-);
-
-REAL8 L2PNR_v1(
-  const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
-  const REAL8 eta  /**< Symmetric mass-ratio */
-);
-
-void WignerdCoefficients(
-  REAL8 *cos_beta_half,   /**< Output: cos(beta/2) */
-  REAL8 *sin_beta_half,   /**< Output: sin(beta/2) */
-  const REAL8 v,          /**< Cubic root of (Pi * Frequency (geometric)) */
-  const REAL8 SL,         /**< Dimensionfull aligned spin */
-  const REAL8 eta,        /**< Symmetric mass-ratio */
-  const REAL8 Sp          /**< Dimensionfull spin component in the orbital plane */
-);
-
-void WignerdCoefficients_SmallAngleApproximation(
-  REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
-  REAL8 *sin_beta_half, /**< Output: sin(beta/2) */
-  const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
-  const REAL8 SL,       /**< Dimensionfull aligned spin */
-  const REAL8 eta,      /**< Symmetric mass-ratio */
-  const REAL8 Sp        /**< Dimensionfull spin component in the orbital plane */
-);
-
 void CheckMaxOpeningAngle(
   const REAL8 m1,     /**< Mass of companion 1 (solar masses) */
   const REAL8 m2,     /**< Mass of companion 2 (solar masses) */

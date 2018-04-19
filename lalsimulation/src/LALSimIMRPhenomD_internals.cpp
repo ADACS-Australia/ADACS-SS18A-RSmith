@@ -81,6 +81,7 @@ of this waveform.
 */
 
 #include "LALSimIMRPhenomD_internals.h"
+#include "LALSimIMRPhenomP_shared.h"
 
 /*
  *
@@ -120,13 +121,6 @@ size_t NextPow2(const size_t n)
 //  else
 //    return 1.0;
 //}
-
-/**
- * Step function in boolean version
- */
-bool StepFunc_boolean(const double t, const double t1) {
-	return (t >= t1);
-}
 
 //////////////////////// Final spin, final mass, fring, fdamp ////////////////////////
 
@@ -236,24 +230,6 @@ double fdamp(double eta, double chi1, double chi2, double finspin) {
   return return_val;
 }
 
-int init_useful_powers(UsefulPowers * p, REAL8 number)
-{
-	XLAL_CHECK(0 != p, XLAL_EFAULT, "p is NULL");
-	XLAL_CHECK(number >= 0 , XLAL_EDOM, "number must be non-negative");
-
-	// consider changing pow(x,1/6.0) to cbrt(x) and sqrt(x) - might be faster
-	p->sixth = pow(number, 1/6.0);
-	p->third = p->sixth * p->sixth;
-	p->two_thirds = number / p->third;
-	p->four_thirds = number * (p->third);
-	p->five_thirds = p->four_thirds * (p->third);
-	p->two = number * number;
-	p->seven_thirds = p->third * p->two;
-	p->eight_thirds = p->two_thirds * p->two;
-
-	return XLAL_SUCCESS;
-}
-
 /******************************* Amplitude functions *******************************/
 
 /**
@@ -313,24 +289,6 @@ double rho3_fun(double eta, double chi) {
   + (-1.4535031953446497e6 + 1.7063528990822166e7*eta - 4.2748659731120914e7*eta2)*xi3;
 }
 
-// The Newtonian term in LAL is fine and we should use exactly the same (either hardcoded or call).
-// We just use the Mathematica expression for convenience.
-/**
- * Inspiral amplitude plus rho phenom coefficents. rho coefficients computed
- * in rho1_fun, rho2_fun, rho3_fun functions.
- * Amplitude is a re-expansion. See 1508.07253 and Equation 29, 30 and Appendix B arXiv:1508.07253 for details
- */
-double AmpInsAnsatz(double Mf, UsefulPowers * powers_of_Mf, AmpInsPrefactors * prefactors) {
-  double Mf2 = powers_of_Mf->two;
-  double Mf3 = Mf*Mf2;
-
-  return 1 + powers_of_Mf->two_thirds * prefactors->two_thirds
-			+ Mf * prefactors->one + powers_of_Mf->four_thirds * prefactors->four_thirds
-			+ powers_of_Mf->five_thirds * prefactors->five_thirds + Mf2 * prefactors->two
-			+ powers_of_Mf->seven_thirds * prefactors->seven_thirds + powers_of_Mf->eight_thirds * prefactors->eight_thirds
-			+ Mf3 * prefactors->three;
-}
-
 int init_amp_ins_prefactors(AmpInsPrefactors * prefactors, IMRPhenomDAmplitudeCoefficients* p)
 {
 	XLAL_CHECK(0 != p, XLAL_EFAULT, "p is NULL");
@@ -386,43 +344,6 @@ int init_amp_ins_prefactors(AmpInsPrefactors * prefactors, IMRPhenomDAmplitudeCo
 	return XLAL_SUCCESS;
 }
 
-/**
- * Take the AmpInsAnsatz expression and compute the first derivative
- * with respect to frequency to get the expression below.
- */
-double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
-  double eta = p->eta;
-  double chi1 = p->chi1;
-  double chi2 = p->chi2;
-  double rho1 = p->rho1;
-  double rho2 = p->rho2;
-  double rho3 = p->rho3;
-
-  double chi12 = chi1*chi1;
-  double chi22 = chi2*chi2;
-  double eta2 = eta*eta;
-  double eta3 = eta*eta2;
-  double Mf2 = Mf*Mf;
-  double Pi = LAL_PI;
-  double Pi2 = powers_of_pi.two;
-  double Seta = sqrt(1.0 - 4.0*eta);
-
-   return ((-969 + 1804*eta)*pow(Pi,2.0/3.0))/(1008.*pow(Mf,1.0/3.0))
-   + ((chi1*(81*(1 + Seta) - 44*eta) + chi2*(81 - 81*Seta - 44*eta))*Pi)/48.
-   + ((-27312085 - 10287648*chi22 - 10287648*chi12*(1 + Seta)
-   + 10287648*chi22*Seta + 24*(-1975055 + 857304*chi12 - 994896*chi1*chi2 + 857304*chi22)*eta
-   + 35371056*eta2)*pow(Mf,1.0/3.0)*pow(Pi,4.0/3.0))/6.096384e6
-   + (5*pow(Mf,2.0/3.0)*pow(Pi,5.0/3.0)*(chi2*(-285197*(-1 + Seta)
-   + 4*(-91902 + 1579*Seta)*eta - 35632*eta2) + chi1*(285197*(1 + Seta)
-   - 4*(91902 + 1579*Seta)*eta - 35632*eta2) + 42840*(-1 + 4*eta)*Pi))/96768.
-   - (Mf*Pi2*(-336*(-3248849057.0 + 2943675504*chi12 - 3339284256*chi1*chi2 + 2943675504*chi22)*eta2 - 324322727232*eta3
-   - 7*(-177520268561 + 107414046432*chi22 + 107414046432*chi12*(1 + Seta) - 107414046432*chi22*Seta
-   + 11087290368*(chi1 + chi2 + chi1*Seta - chi2*Seta)*Pi)
-   + 12*eta*(-545384828789.0 - 176491177632*chi1*chi2 + 202603761360*chi22 + 77616*chi12*(2610335 + 995766*Seta)
-   - 77287373856*chi22*Seta + 5841690624*(chi1 + chi2)*Pi + 21384760320*Pi2)))/3.0042980352e10
-   + (7.0/3.0)*pow(Mf,4.0/3.0)*rho1 + (8.0/3.0)*pow(Mf,5.0/3.0)*rho2 + 3*Mf2*rho3;
-}
-
 /////////////////////////// Amplitude: Merger-Ringdown functions ///////////////////////
 
 // Phenom coefficients gamma1, ..., gamma3
@@ -474,41 +395,6 @@ double gamma3_fun(double eta, double chi) {
 }
 
 /**
- * Ansatz for the merger-ringdown amplitude. Equation 19 arXiv:1508.07253
- */
-double AmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p) {
-  double fRD = p->fRD;
-  double fDM = p->fDM;
-  double gamma1 = p->gamma1;
-  double gamma2 = p->gamma2;
-  double gamma3 = p->gamma3;
-  double fDMgamma3 = fDM*gamma3;
-  double fminfRD = f - fRD;
-  return exp( -(fminfRD)*gamma2 / (fDMgamma3) )
-    * (fDMgamma3*gamma1) / (pow_2_of(fminfRD) + pow_2_of(fDMgamma3));
-}
-
-/**
- * first frequency derivative of AmpMRDAnsatz
- */
-double DAmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p) {
-  double fRD = p->fRD;
-  double fDM = p->fDM;
-  double gamma1 = p->gamma1;
-  double gamma2 = p->gamma2;
-  double gamma3 = p->gamma3;
-
-  double fDMgamma3 = fDM * gamma3;
-  double pow2_fDMgamma3 = pow_2_of(fDMgamma3);
-  double fminfRD = f - fRD;
-  double expfactor = exp(((fminfRD)*gamma2)/(fDMgamma3));
-  double pow2pluspow2 = pow_2_of(fminfRD) + pow2_fDMgamma3;
-
-   return (-2*fDM*(fminfRD)*gamma3*gamma1) / ( expfactor * pow_2_of(pow2pluspow2)) -
-     (gamma2*gamma1) / ( expfactor * (pow2pluspow2)) ;
-}
-
-/**
  * Equation 20 arXiv:1508.07253 (called f_peak in paper)
  * analytic location of maximum of AmpMRDAnsatz
  */
@@ -531,16 +417,6 @@ double fmaxCalc(IMRPhenomDAmplitudeCoefficients* p) {
 // Phenom coefficients delta0, ..., delta4 determined from collocation method
 // (constraining 3 values and 2 derivatives)
 // AmpIntAnsatzFunc[]
-
-/**
- * Ansatz for the intermediate amplitude. Equation 21 arXiv:1508.07253
- */
-double AmpIntAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
-  double Mf2 = Mf*Mf;
-  double Mf3 = Mf*Mf2;
-  double Mf4 = Mf*Mf3;
-  return p->delta0 + p->delta1*Mf + p->delta2*Mf2 + p->delta3*Mf3 + p->delta4*Mf4;
-}
 
 /**
  * The function name stands for 'Amplitude Intermediate Collocation Fit Coefficient'
@@ -821,41 +697,6 @@ IMRPhenomDAmplitudeCoefficients* ComputeIMRPhenomDAmplitudeCoefficients(double e
   return p;
 }
 
-// Call ComputeIMRPhenomDAmplitudeCoefficients() first!
-/**
- * This function computes the IMR amplitude given phenom coefficients.
- * Defined in VIII. Full IMR Waveforms arXiv:1508.07253
- */
-double IMRPhenDAmplitude(double f, IMRPhenomDAmplitudeCoefficients *p, UsefulPowers *powers_of_f, AmpInsPrefactors * prefactors) {
-  // Defined in VIII. Full IMR Waveforms arXiv:1508.07253
-  // The inspiral, intermediate and merger-ringdown amplitude parts
-
-  // Transition frequencies
-  p->fInsJoin = AMP_fJoin_INS;
-  p->fMRDJoin = p->fmaxCalc;
-
-  double f_seven_sixths = f * powers_of_f->sixth;
-  double AmpPreFac = prefactors->amp0 / f_seven_sixths;
-
-  // split the calculation to just 1 of 3 possible mutually exclusive ranges
-
-  if (!StepFunc_boolean(f, p->fInsJoin))	// Inspiral range
-  {
-	  double AmpIns = AmpPreFac * AmpInsAnsatz(f, powers_of_f, prefactors);
-	  return AmpIns;
-  }
-
-  if (StepFunc_boolean(f, p->fMRDJoin))	// MRD range
-  {
-	  double AmpMRD = AmpPreFac * AmpMRDAnsatz(f, p);
-	  return AmpMRD;
-  }
-
-  //	Intermediate range
-  double AmpInt = AmpPreFac * AmpIntAnsatz(f, p);
-  return AmpInt;
-}
-
 /********************************* Phase functions *********************************/
 
 ////////////////////////////// Phase: Ringdown functions ///////////////////////////
@@ -939,22 +780,6 @@ double alpha5Fit(double eta, double chi) {
 }
 
 /**
- * Ansatz for the merger-ringdown phase Equation 14 arXiv:1508.07253
- */
-double PhiMRDAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p)
-{
-  double sqrootf = sqrt(f);
-  double fpow1_5 = f * sqrootf;
-  // check if this is any faster: 2 sqrts instead of one pow(x,0.75)
-  double fpow0_75 = sqrt(fpow1_5); // pow(f,0.75);
-
-  return -(p->alpha2/f)
-		 + (4.0/3.0) * (p->alpha3 * fpow0_75)
-		 + p->alpha1 * f
-		 + p->alpha4 * atan((f - p->alpha5 * p->fRD) / p->fDM);
-}
-
-/**
  * First frequency derivative of PhiMRDAnsatzInt
  */
 double DPhiMRD(double f, IMRPhenomDPhaseCoefficients *p) {
@@ -1012,16 +837,6 @@ double beta3Fit(double eta, double chi) {
   + (-0.000018370671469295915 + 0.000021886317041311973*eta + 0.00008250240316860033*eta2)*xi
   + (7.157371250566708e-6 - 0.000055780000112270685*eta + 0.00019142082884072178*eta2)*xi2
   + (5.447166261464217e-6 - 0.00003220610095021982*eta + 0.00007974016714984341*eta2)*xi3;
-}
-
-/**
- * ansatz for the intermediate phase defined by Equation 16 arXiv:1508.07253
- */
-double PhiIntAnsatz(double Mf, IMRPhenomDPhaseCoefficients *p) {
-  // 1./eta in paper omitted and put in when need in the functions:
-  // ComputeIMRPhenDPhaseConnectionCoefficients
-  // IMRPhenDPhase
-  return  p->beta1*Mf - p->beta3/(3.*pow_3_of(Mf)) + p->beta2*log(Mf);
 }
 
 /**
@@ -1109,41 +924,6 @@ double sigma4Fit(double eta, double chi) {
   + (-9608.682631509726 - 1.7108925257214056e6*eta + 4.332924601416521e6*eta2)*xi
   + (-22366.683262266528 - 2.5019716386377467e6*eta + 1.0274495902259542e7*eta2)*xi2
   + (-85360.30079034246 - 570025.3441737515*eta + 4.396844346849777e6*eta2)*xi3;
-}
-
-/**
- * Ansatz for the inspiral phase.
- * We call the LAL TF2 coefficients here.
- * The exact values of the coefficients used are given
- * as comments in the top of this file
- * Defined by Equation 27 and 28 arXiv:1508.07253
- */
-double PhiInsAnsatzInt(double Mf, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn)
-{
-	XLAL_CHECK(0 != pn, XLAL_EFAULT, "pn is NULL");
-
-  // Assemble PN phasing series
-  const double v = powers_of_Mf->third * powers_of_pi.third;
-  const double logv = log(v);
-
-  double phasing = prefactors->initial_phasing;
-
-  phasing += prefactors->two_thirds	* powers_of_Mf->two_thirds;
-  phasing += prefactors->third * powers_of_Mf->third;
-  phasing += prefactors->third_with_logv * logv * powers_of_Mf->third;
-  phasing += prefactors->logv * logv;
-  phasing += prefactors->minus_third / powers_of_Mf->third;
-  phasing += prefactors->minus_two_thirds / powers_of_Mf->two_thirds;
-  phasing += prefactors->minus_one / Mf;
-  phasing += prefactors->minus_five_thirds / powers_of_Mf->five_thirds; // * v^0
-
-  // Now add higher order terms that were calibrated for PhenomD
-  phasing += ( prefactors->one * Mf + prefactors->four_thirds * powers_of_Mf->four_thirds
-			   + prefactors->five_thirds * powers_of_Mf->five_thirds
-			   + prefactors->two * powers_of_Mf->two
-			 ) / p->eta;
-
-  return phasing;
 }
 
 int init_phi_ins_prefactors(PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients* p, PNPhasingSeries *pn)
@@ -1316,34 +1096,6 @@ void ComputeIMRPhenDPhaseConnectionCoefficients(IMRPhenomDPhaseCoefficients *p, 
   double DPhiMRDVal = DPhiMRD(p->fMRDJoin, p);
   p->C2MRD = DPhiIntTempVal - DPhiMRDVal;
   p->C1MRD = PhiIntTempVal - 1.0/eta * PhiMRDAnsatzInt(p->fMRDJoin, p) - p->C2MRD*p->fMRDJoin;
-}
-
-/**
- * This function computes the IMR phase given phenom coefficients.
- * Defined in VIII. Full IMR Waveforms arXiv:1508.07253
- */
-double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, UsefulPowers *powers_of_f, PhiInsPrefactors * prefactors)
-{
-  // Defined in VIII. Full IMR Waveforms arXiv:1508.07253
-  // The inspiral, intermendiate and merger-ringdown phase parts
-
-  // split the calculation to just 1 of 3 possible mutually exclusive ranges
-
-  if (!StepFunc_boolean(f, p->fInsJoin))	// Inspiral range
-  {
-	  double PhiIns = PhiInsAnsatzInt(f, powers_of_f, prefactors, p, pn);
-	  return PhiIns;
-  }
-
-  if (StepFunc_boolean(f, p->fMRDJoin))	// MRD range
-  {
-	  double PhiMRD = 1.0/p->eta * PhiMRDAnsatzInt(f, p) + p->C1MRD + p->C2MRD * f;
-	  return PhiMRD;
-  }
-
-  //	Intermediate range
-  double PhiInt = 1.0/p->eta * PhiIntAnsatz(f, p) + p->C1Int + p->C2Int * f;
-  return PhiInt;
 }
 
 /**

@@ -127,6 +127,7 @@ pkginclude_HEADERS = \
 	LALSimUniversalRelations.h
 
 noinst_HEADERS = \
+	cuda_complex.hpp \
 	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
 	LALSimIMRSpinPrecEOBEulerAngles.c \
 	LALSimIMRSpinPrecEOBWfGen.c \
@@ -152,7 +153,7 @@ noinst_HEADERS = \
 	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomD_internals.h \
 	LALSimIMRPhenomP.h \
-	LALSimIMRPhenomP_cuda.h \
+	LALSimIMRPhenomP_shared.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
@@ -265,7 +266,9 @@ liblalsimulation_la_SOURCES = \
 	LALSimUniversalRelations.c
 
 if CUDA
-liblalsimulation_la_SOURCES += LALSimIMRPhenomP_cuda.cu
+liblalsimulation_la_SOURCES += LALSimIMRPhenomP_shared_cuda.cu
+else
+liblalsimulation_la_SOURCES += LALSimIMRPhenomP_shared_nocuda.cpp
 endif
 
 LDADD = liblalsimulation.la
