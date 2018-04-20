@@ -46,6 +46,30 @@
 #include "LALSimIMRPhenomP_shared.h"
 
 #if defined(LALSIMULATION_CUDA_ENABLED)
+#define _XLAL_CHECK_CUDA(assertion,error_code,...) \
+    do { \
+        if (!(assertion)) { \
+            cause_cuda_error(error_code); \
+        } \
+    } while (0)
+#define _XLAL_ERROR_CUDA(error_code,...) \
+    do { \
+        cause_cuda_error(error_code); \
+    } while (0)
+#define _XLALPrintError(error_code,...) \
+    do { } while (0)
+#define XLAL_CHECK_CUDA      _XLAL_CHECK_CUDA
+#define XLAL_CHECK_CUDA_VOID _XLAL_CHECK_CUDA
+#define XLAL_ERROR_CUDA      _XLAL_ERROR_CUDA
+#define XLALPrintError_CUDA  _XLALPrintError
+#else
+#define XLAL_CHECK_CUDA      XLAL_CHECK
+#define XLAL_CHECK_CUDA_VOID XLAL_CHECK_VOID
+#define XLAL_ERROR_CUDA      XLAL_ERROR
+#define XLALPrintError_CUDA  XLALPrintError
+#endif
+
+#if defined(LALSIMULATION_CUDA_ENABLED)
 void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         REAL8Sequence *freqs,
         UINT4 offset,
@@ -205,10 +229,13 @@ __host__ void notify_of_global_error(int error_code)
 // Call this function in kernels to put the GPU in an error state that can be caught after as an exception
 //    This is not necessarily the best way, but it will do the job for now.  This is based on:
 // https://devtalk.nvidia.com/default/topic/418479/how-to-trigger-a-cuda-error-from-inside-a-kernel/
+// We accept an error code and do something useless with so that the functionality is there
+// for the day when we come-up with a better way of throwing and reporting CUDA kernel errors.
 __device__
-void inline cause_cuda_error(){
+void inline cause_cuda_error(const int error_code){
    int *adr = (int*)0xffffffff;
-   *adr = 12;
+   *adr = 12; // This should induce an error state
+   *adr = error_code; // This is to prevent a compiler warning
 }
 
 __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
@@ -254,7 +281,7 @@ __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
 
       // Throw execption if necessary
       if (per_thread_errcode != XLAL_SUCCESS)
-        cause_cuda_error(); 
+        cause_cuda_error(1010101010); 
 
       (hptilde->data->data)[j] = hp_val;
       (hctilde->data->data)[j] = hc_val;
@@ -362,11 +389,11 @@ LALSIMULATION_CUDA_DEVICE int PhenomPCoreOneFrequency(
   AmpInsPrefactors *amp_prefactors,           /**< pre-calculated (cached for saving runtime) coefficients for amplitude. See LALSimIMRPhenomD_internals.c*/
   PhiInsPrefactors *phi_prefactors            /**< pre-calculated (cached for saving runtime) coefficients for phase. See LALSimIMRPhenomD_internals.*/)
 {
-//  XLAL_CHECK(angcoeffs != NULL, XLAL_EFAULT);
-//  XLAL_CHECK(hp != NULL, XLAL_EFAULT);
-//  XLAL_CHECK(hc != NULL, XLAL_EFAULT);
-//  XLAL_CHECK(Y2m != NULL, XLAL_EFAULT);
-//  XLAL_CHECK(phasing != NULL, XLAL_EFAULT);
+  XLAL_CHECK_CUDA(angcoeffs != NULL, XLAL_EFAULT);
+  XLAL_CHECK_CUDA(hp != NULL, XLAL_EFAULT);
+  XLAL_CHECK_CUDA(hc != NULL, XLAL_EFAULT);
+  XLAL_CHECK_CUDA(Y2m != NULL, XLAL_EFAULT);
+  XLAL_CHECK_CUDA(phasing != NULL, XLAL_EFAULT);
 
   REAL8 f = fHz*LAL_MTSUN_SI*M; /* Frequency in geometric units */
 
@@ -385,25 +412,25 @@ LALSIMULATION_CUDA_DEVICE int PhenomPCoreOneFrequency(
   /* Calculate Phenom amplitude and phase for a given frequency. */
   switch (IMRPhenomP_version) {
     case IMRPhenomPv1_V:
-//      XLAL_CHECK(PCparams != NULL, XLAL_EFAULT);
+      XLAL_CHECK_CUDA(PCparams != NULL, XLAL_EFAULT);
       errcode = IMRPhenomCGenerateAmpPhase( &aPhenom, &phPhenom, fHz, eta, PCparams );
-      if( errcode != XLAL_SUCCESS ) XLAL_ERROR(XLAL_EFUNC);
+      if( errcode != XLAL_SUCCESS ) XLAL_ERROR_CUDA(XLAL_EFUNC);
       SL = chi_eff*m2;        /* Dimensionfull aligned spin of the largest BH. SL = m2^2 chil = m2*M*chi_eff */
       break;
     case IMRPhenomPv2_V:
-//      XLAL_CHECK(pAmp != NULL, XLAL_EFAULT);
-//      XLAL_CHECK(pPhi != NULL, XLAL_EFAULT);
-//      XLAL_CHECK(PNparams != NULL, XLAL_EFAULT);
-//      XLAL_CHECK(amp_prefactors != NULL, XLAL_EFAULT);
-//      XLAL_CHECK(phi_prefactors != NULL, XLAL_EFAULT);
+      XLAL_CHECK_CUDA(pAmp != NULL, XLAL_EFAULT);
+      XLAL_CHECK_CUDA(pPhi != NULL, XLAL_EFAULT);
+      XLAL_CHECK_CUDA(PNparams != NULL, XLAL_EFAULT);
+      XLAL_CHECK_CUDA(amp_prefactors != NULL, XLAL_EFAULT);
+      XLAL_CHECK_CUDA(phi_prefactors != NULL, XLAL_EFAULT);
       errcode = init_useful_powers(&powers_of_f, f);
-//      XLAL_CHECK(errcode == XLAL_SUCCESS, errcode, "init_useful_powers failed for f");
+      XLAL_CHECK_CUDA(errcode == XLAL_SUCCESS, errcode, "init_useful_powers failed for f");
       aPhenom = IMRPhenDAmplitude(f, pAmp, &powers_of_f, amp_prefactors);
       phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors);
       SL = chi1_l*m1*m1 + chi2_l*m2*m2;        /* Dimensionfull aligned spin. */
       break;
     default:
-//      XLAL_ERROR( XLAL_EINVAL, "Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
+      XLAL_ERROR_CUDA( XLAL_EINVAL, "Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
       break;
   }
 
@@ -439,7 +466,7 @@ LALSIMULATION_CUDA_DEVICE int PhenomPCoreOneFrequency(
       WignerdCoefficients(&cBetah, &sBetah, omega_cbrt, SL, eta, Sperp);
       break;
   default:
-    XLAL_ERROR( XLAL_EINVAL, " Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
+    XLAL_ERROR_CUDA( XLAL_EINVAL, " Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
     break;
   }
 
@@ -471,7 +498,7 @@ LALSIMULATION_CUDA_DEVICE int PhenomPCoreOneFrequency(
   COMPLEX16 cexp_im_alpha[5] = {cexp_m2i_alpha, cexp_mi_alpha, 1.0, cexp_i_alpha, cexp_2i_alpha};
   for(int m=-2; m<=2; m++) {
     COMPLEX16 T2m   = cexp_im_alpha[-m+2] * dm2[m+2] *      Y2mA[m+2];  /*  = cexp(-I*m*alpha) * dm2[m+2] *      Y2mA[m+2] */
-    COMPLEX16 Tm2m  = cexp_im_alpha[m+2]  * d2[m+2]  * conj(Y2mA[m+2]); /*  = cexp(+I*m*alpha) * d2[m+2]  * conj(Y2mA[m+2]) */
+    COMPLEX16 Tm2m  = cexp_im_alpha[m+2]  * d2[m+2]  ;// FIX ME! * conj(Y2mA[m+2]); /*  = cexp(+I*m*alpha) * d2[m+2]  * conj(Y2mA[m+2]) */
     hp_sum +=     T2m + Tm2m;
     //*******************************************************************************************************************************************************
     //FIX ME! hc_sum += +I*(T2m - Tm2m);
@@ -550,8 +577,8 @@ LALSIMULATION_CUDA_DEVICE void WignerdCoefficients(
   const REAL8 eta,      /**< Symmetric mass-ratio */
   const REAL8 Sp)       /**< Dimensionfull spin component in the orbital plane */
 {
-  XLAL_CHECK_VOID(cos_beta_half != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VOID(sin_beta_half != NULL, XLAL_EFAULT);
+  XLAL_CHECK_CUDA_VOID(cos_beta_half != NULL, XLAL_EFAULT);
+  XLAL_CHECK_CUDA_VOID(sin_beta_half != NULL, XLAL_EFAULT);
   /* We define the shorthand s := Sp / (L + SL) */
   const REAL8 L = L2PNR(v, eta);
     // We ignore the sign of L + SL below.
@@ -583,8 +610,8 @@ LALSIMULATION_CUDA_DEVICE void WignerdCoefficients_SmallAngleApproximation(
   const REAL8 eta,      /**< Symmetric mass-ratio */
   const REAL8 Sp)       /**< Dimensionfull spin component in the orbital plane */
 {
-  XLAL_CHECK_VOID(cos_beta_half != NULL, XLAL_EFAULT);
-  XLAL_CHECK_VOID(sin_beta_half != NULL, XLAL_EFAULT);
+  XLAL_CHECK_CUDA_VOID(cos_beta_half != NULL, XLAL_EFAULT);
+  XLAL_CHECK_CUDA_VOID(sin_beta_half != NULL, XLAL_EFAULT);
   REAL8 s = Sp / (L2PNR_v1(v, eta) + SL);  /* s := Sp / (L + SL) */
   REAL8 s2 = s*s;
   *cos_beta_half = 1.0/sqrt(1.0 + s2/4.0);           /* cos(beta/2) */
@@ -612,7 +639,7 @@ LALSIMULATION_CUDA_DEVICE int IMRPhenomCGenerateAmpPhase(
   REAL8 Mf = params->m_sec * f;
 
   if( v >= 1.0 )
-    XLAL_ERROR(XLAL_EDOM);
+    XLAL_ERROR_CUDA(XLAL_EDOM);
 
   REAL8 v2 = v*v;
   REAL8 v3 = v*v2;
@@ -659,8 +686,8 @@ LALSIMULATION_CUDA_DEVICE int IMRPhenomCGenerateAmpPhase(
 
   if( xdot < 0.0 && f < params->f1 )
   {
-    XLALPrintError("omegaDot < 0, while frequency is below SPA-PM matching freq.");
-    XLAL_ERROR( XLAL_EDOM );
+    XLALPrintError_CUDA("omegaDot < 0, while frequency is below SPA-PM matching freq.");
+    XLAL_ERROR_CUDA( XLAL_EDOM );
   }
 
   REAL8 aPM = 0.0;
@@ -701,8 +728,8 @@ LALSIMULATION_CUDA_DEVICE int IMRPhenomCGenerateAmpPhase(
 
 LALSIMULATION_CUDA_DEVICE int init_useful_powers(UsefulPowers * p, REAL8 number)
 {
-    XLAL_CHECK(0 != p, XLAL_EFAULT, "p is NULL");
-    XLAL_CHECK(number >= 0 , XLAL_EDOM, "number must be non-negative");
+    XLAL_CHECK_CUDA(0 != p, XLAL_EFAULT, "p is NULL");
+    XLAL_CHECK_CUDA(number >= 0 , XLAL_EDOM, "number must be non-negative");
 
     // consider changing pow(x,1/6.0) to cbrt(x) and sqrt(x) - might be faster
     p->sixth = pow(number, 1/6.0);
@@ -924,7 +951,7 @@ LALSIMULATION_CUDA_DEVICE double AmpIntAnsatz(double Mf, IMRPhenomDAmplitudeCoef
  */
 LALSIMULATION_CUDA_DEVICE double PhiInsAnsatzInt(double Mf, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn)
 {
-    XLAL_CHECK(0 != pn, XLAL_EFAULT, "pn is NULL");
+    XLAL_CHECK_CUDA(0 != pn, XLAL_EFAULT, "pn is NULL");
 
   // Assemble PN phasing series
   const double v = powers_of_Mf->third * powers_of_pi.third;

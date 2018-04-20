@@ -333,7 +333,6 @@ double fmaxCalc(IMRPhenomDAmplitudeCoefficients* p);
 
 //////////////////////////// Amplitude: Intermediate functions ///////////////////////
 
-double AmpIntAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
 double AmpIntColFitCoeff(double eta, double chiPN); //this is the v2 value
 double delta0_fun(IMRPhenomDAmplitudeCoefficients* p, DeltaUtility* d);
 double delta1_fun(IMRPhenomDAmplitudeCoefficients* p, DeltaUtility* d);

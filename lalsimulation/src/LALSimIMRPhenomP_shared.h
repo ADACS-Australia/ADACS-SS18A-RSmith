@@ -305,6 +305,7 @@ LALSIMULATION_CUDA_DEVICE double AmpInsAnsatz(double Mf, UsefulPowers * powers_o
 LALSIMULATION_CUDA_DEVICE double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p);
 LALSIMULATION_CUDA_DEVICE double AmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
 LALSIMULATION_CUDA_DEVICE double DAmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
+LALSIMULATION_CUDA_DEVICE double AmpIntAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
 LALSIMULATION_CUDA_DEVICE double PhiInsAnsatzInt(double f, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
 LALSIMULATION_CUDA_DEVICE double PhiMRDAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p);
 LALSIMULATION_CUDA_DEVICE double PhiIntAnsatz(double f, IMRPhenomDPhaseCoefficients *p);
