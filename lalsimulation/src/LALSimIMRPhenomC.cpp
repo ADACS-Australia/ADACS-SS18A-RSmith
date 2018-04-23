@@ -43,6 +43,7 @@
 #include <lal/Units.h>
 
 #include "LALSimIMRPhenomC_internals.h"
+#include "LALSimIMRPhenomP_shared.h"
 
 #ifndef _OPENMP
 #define omp ignore

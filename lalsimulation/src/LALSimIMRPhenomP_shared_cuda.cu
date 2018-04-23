@@ -45,7 +45,7 @@
 #include "LALSimIMRPhenomP.h"
 #include "LALSimIMRPhenomP_shared.h"
 
-#if defined(LALSIMULATION_CUDA_ENABLED)
+#if defined(LALSIMULATION_CUDA_ENABLED) && defined(__CUDA_ARCH__)
 #define _XLAL_CHECK_CUDA(assertion,error_code,...) \
     do { \
         if (!(assertion)) { \
@@ -96,7 +96,6 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         COMPLEX16FrequencySeries *hctilde_host,
         REAL8 *phis_host,
         int   *errcode){
-
   // Copy inputs to device
   IMRPhenomDAmplitudeCoefficients pAmp;
   IMRPhenomDPhaseCoefficients pPhi;
@@ -231,8 +230,7 @@ __host__ void notify_of_global_error(int error_code)
 // https://devtalk.nvidia.com/default/topic/418479/how-to-trigger-a-cuda-error-from-inside-a-kernel/
 // We accept an error code and do something useless with so that the functionality is there
 // for the day when we come-up with a better way of throwing and reporting CUDA kernel errors.
-__device__
-void inline cause_cuda_error(const int error_code){
+__device__ void inline cause_cuda_error(const int error_code){
    int *adr = (int*)0xffffffff;
    *adr = 12; // This should induce an error state
    *adr = error_code; // This is to prevent a compiler warning
@@ -365,7 +363,7 @@ const double sqrt_6 = 2.44948974278317788;
  * \f}
  * (perpendicular spin).
  */
-LALSIMULATION_CUDA_DEVICE int PhenomPCoreOneFrequency(
+LALSIMULATION_CUDA_HOST_DEVICE int PhenomPCoreOneFrequency(
   const REAL8 fHz,                            /**< Frequency (Hz) */
   const REAL8 eta,                            /**< Symmetric mass ratio */
   const REAL8 chi1_l,                         /**< Dimensionless aligned spin on companion 1 */
@@ -436,7 +434,7 @@ LALSIMULATION_CUDA_DEVICE int PhenomPCoreOneFrequency(
 
   phPhenom -= 2.*phic; /* Note: phic is orbital phase */
   REAL8 amp0 = M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
-  COMPLEX16 hP = 0.;//FIX ME! amp0 * aPhenom * (cos(phPhenom) - I*sin(phPhenom));//cexp(-I*phPhenom); /* Assemble IMRPhenom waveform. */
+  COMPLEX16 hP = amp0 * aPhenom * (cos(phPhenom) - I*sin(phPhenom));//cexp(-I*phPhenom); /* Assemble IMRPhenom waveform. */
 
   /* Compute PN NNLO angles */
   const REAL8 omega = LAL_PI * f;
@@ -491,20 +489,19 @@ LALSIMULATION_CUDA_DEVICE int PhenomPCoreOneFrequency(
 
   /* Sum up contributions to \tilde h+ and \tilde hx */
   /* Precompute powers of e^{i m alpha} */
-  COMPLEX16 cexp_i_alpha = 0.;//FIX ME! cos(alpha) + I*sin(alpha);//cexp(+I*alpha);
+  COMPLEX16 cexp_i_alpha =  cos(alpha) + I*sin(alpha);//cexp(+I*alpha);
   COMPLEX16 cexp_2i_alpha = cexp_i_alpha*cexp_i_alpha;
   COMPLEX16 cexp_mi_alpha = 1.0/cexp_i_alpha;
   COMPLEX16 cexp_m2i_alpha = cexp_mi_alpha*cexp_mi_alpha;
   COMPLEX16 cexp_im_alpha[5] = {cexp_m2i_alpha, cexp_mi_alpha, 1.0, cexp_i_alpha, cexp_2i_alpha};
   for(int m=-2; m<=2; m++) {
     COMPLEX16 T2m   = cexp_im_alpha[-m+2] * dm2[m+2] *      Y2mA[m+2];  /*  = cexp(-I*m*alpha) * dm2[m+2] *      Y2mA[m+2] */
-    COMPLEX16 Tm2m  = cexp_im_alpha[m+2]  * d2[m+2]  ;// FIX ME! * conj(Y2mA[m+2]); /*  = cexp(+I*m*alpha) * d2[m+2]  * conj(Y2mA[m+2]) */
+    COMPLEX16 Tm2m  = cexp_im_alpha[m+2]  * d2[m+2]  * conj(Y2mA[m+2]); /*  = cexp(+I*m*alpha) * d2[m+2]  * conj(Y2mA[m+2]) */
     hp_sum +=     T2m + Tm2m;
-    //*******************************************************************************************************************************************************
-    //FIX ME! hc_sum += +I*(T2m - Tm2m);
+    hc_sum += +I*(T2m - Tm2m);
   }
 
-  COMPLEX16 eps_phase_hP = 0.;//FIX ME! (cos(2*epsilon) - I*sin(2*epsilon)) *hP /2.0;//cexp(-2*I*epsilon) * hP / 2.0;
+  COMPLEX16 eps_phase_hP = (cos(2*epsilon) - I*sin(2*epsilon)) *hP /2.0;//cexp(-2*I*epsilon) * hP / 2.0;
   *hp = eps_phase_hP * hp_sum;
   *hc = eps_phase_hP * hc_sum;
 
@@ -522,7 +519,7 @@ LALSIMULATION_CUDA_DEVICE int PhenomPCoreOneFrequency(
  *  Reference:
  *  - Boh&eacute; et al, 1212.5520v2 Eq 4.7 first line
  */
-LALSIMULATION_CUDA_DEVICE REAL8 L2PNR(
+LALSIMULATION_CUDA_HOST_DEVICE REAL8 L2PNR(
   const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 eta) /**< Symmetric mass-ratio */
 {
@@ -540,7 +537,7 @@ LALSIMULATION_CUDA_DEVICE REAL8 L2PNR(
  * Reference:
  *  - Kidder, Phys. Rev. D 52, 821–847 (1995), Eq. 2.9
  */
-LALSIMULATION_CUDA_DEVICE REAL8 L2PNR_v1(
+LALSIMULATION_CUDA_HOST_DEVICE REAL8 L2PNR_v1(
   const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 eta) /**< Symmetric mass-ratio */
 {
@@ -569,7 +566,7 @@ LALSIMULATION_CUDA_DEVICE REAL8 L2PNR_v1(
   *             = \mathrm{sign}\left( L + S_L \right) \cdot \left( 1 + \left( S_p / \left(L + S_L\right)\right)^2 \right)^{-1/2}
   * \f}
  */
-LALSIMULATION_CUDA_DEVICE void WignerdCoefficients(
+LALSIMULATION_CUDA_HOST_DEVICE void WignerdCoefficients(
   REAL8 *cos_beta_half, /**< [out] cos(beta/2) */
   REAL8 *sin_beta_half, /**< [out] sin(beta/2) */
   const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
@@ -602,7 +599,7 @@ LALSIMULATION_CUDA_DEVICE void WignerdCoefficients(
   * \f}
   * where \f$s := S_p / (L + S_L)\f$.
  */
-LALSIMULATION_CUDA_DEVICE void WignerdCoefficients_SmallAngleApproximation(
+LALSIMULATION_CUDA_HOST_DEVICE void WignerdCoefficients_SmallAngleApproximation(
   REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
   REAL8 *sin_beta_half, /**< Output: sin(beta/2) */
   const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
@@ -623,7 +620,7 @@ LALSIMULATION_CUDA_DEVICE void WignerdCoefficients_SmallAngleApproximation(
 /* PhenomC waveform, at a given frequency.                                         */
 /* Eq. (5.3), (5.9) of the Main paper.                                             */
 /***********************************************************************************/
-LALSIMULATION_CUDA_DEVICE int IMRPhenomCGenerateAmpPhase(
+LALSIMULATION_CUDA_HOST_DEVICE int IMRPhenomCGenerateAmpPhase(
     REAL8 *amplitude, /**< pointer to memory for phenomC amplitude */
     REAL8 *phasing,   /**< pointer to memory for phenomC phase */
     REAL8 f,          /**< frequency (Hz) */
@@ -726,7 +723,7 @@ LALSIMULATION_CUDA_DEVICE int IMRPhenomCGenerateAmpPhase(
   return XLAL_SUCCESS;
 }
 
-LALSIMULATION_CUDA_DEVICE int init_useful_powers(UsefulPowers * p, REAL8 number)
+LALSIMULATION_CUDA_HOST_DEVICE int init_useful_powers(UsefulPowers * p, REAL8 number)
 {
     XLAL_CHECK_CUDA(0 != p, XLAL_EFAULT, "p is NULL");
     XLAL_CHECK_CUDA(number >= 0 , XLAL_EDOM, "number must be non-negative");
@@ -749,7 +746,7 @@ LALSIMULATION_CUDA_DEVICE int init_useful_powers(UsefulPowers * p, REAL8 number)
  * This function computes the IMR amplitude given phenom coefficients.
  * Defined in VIII. Full IMR Waveforms arXiv:1508.07253
  */
-LALSIMULATION_CUDA_DEVICE double IMRPhenDAmplitude(double f, IMRPhenomDAmplitudeCoefficients *p, UsefulPowers *powers_of_f, AmpInsPrefactors * prefactors) {
+LALSIMULATION_CUDA_HOST_DEVICE double IMRPhenDAmplitude(double f, IMRPhenomDAmplitudeCoefficients *p, UsefulPowers *powers_of_f, AmpInsPrefactors * prefactors) {
   // Defined in VIII. Full IMR Waveforms arXiv:1508.07253
   // The inspiral, intermediate and merger-ringdown amplitude parts
 
@@ -783,7 +780,7 @@ LALSIMULATION_CUDA_DEVICE double IMRPhenDAmplitude(double f, IMRPhenomDAmplitude
  * This function computes the IMR phase given phenom coefficients.
  * Defined in VIII. Full IMR Waveforms arXiv:1508.07253
  */
-LALSIMULATION_CUDA_DEVICE double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, UsefulPowers *powers_of_f, PhiInsPrefactors * prefactors)
+LALSIMULATION_CUDA_HOST_DEVICE double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, UsefulPowers *powers_of_f, PhiInsPrefactors * prefactors)
 {
   // Defined in VIII. Full IMR Waveforms arXiv:1508.07253
   // The inspiral, intermendiate and merger-ringdown phase parts
@@ -811,7 +808,7 @@ LALSIMULATION_CUDA_DEVICE double IMRPhenDPhase(double f, IMRPhenomDPhaseCoeffici
 /* The following function return the hyperbolic-Tan+ windows used   */
 /* in Eq.(5.9), (5.13) of the Main paper                             */
 /*********************************************************************/
-LALSIMULATION_CUDA_DEVICE REAL8 wPlus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params )
+LALSIMULATION_CUDA_HOST_DEVICE REAL8 wPlus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params )
 {
 
   REAL8 Mf = params->m_sec * f;
@@ -825,7 +822,7 @@ LALSIMULATION_CUDA_DEVICE REAL8 wPlus( const REAL8 f, const REAL8 f0, const REAL
 /* The following function return the hyperbolic-Tan- windows used   */
 /* in Eq.(5.9), (5.13) of the Main paper                             */
 /*********************************************************************/
-LALSIMULATION_CUDA_DEVICE REAL8 wMinus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params )
+LALSIMULATION_CUDA_HOST_DEVICE REAL8 wMinus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params )
 {
 
   REAL8 Mf = params->m_sec * f;
@@ -838,7 +835,7 @@ LALSIMULATION_CUDA_DEVICE REAL8 wMinus( const REAL8 f, const REAL8 f0, const REA
 /**
  * Step function in boolean version
  */
-LALSIMULATION_CUDA_DEVICE bool StepFunc_boolean(const double t, const double t1) {
+LALSIMULATION_CUDA_HOST_DEVICE bool StepFunc_boolean(const double t, const double t1) {
     return (t >= t1);
 }
 
@@ -849,7 +846,7 @@ LALSIMULATION_CUDA_DEVICE bool StepFunc_boolean(const double t, const double t1)
  * in rho1_fun, rho2_fun, rho3_fun functions.
  * Amplitude is a re-expansion. See 1508.07253 and Equation 29, 30 and Appendix B arXiv:1508.07253 for details
  */
-LALSIMULATION_CUDA_DEVICE double AmpInsAnsatz(double Mf, UsefulPowers * powers_of_Mf, AmpInsPrefactors * prefactors) {
+LALSIMULATION_CUDA_HOST_DEVICE double AmpInsAnsatz(double Mf, UsefulPowers * powers_of_Mf, AmpInsPrefactors * prefactors) {
   double Mf2 = powers_of_Mf->two;
   double Mf3 = Mf*Mf2;
 
@@ -864,7 +861,7 @@ LALSIMULATION_CUDA_DEVICE double AmpInsAnsatz(double Mf, UsefulPowers * powers_o
  * Take the AmpInsAnsatz expression and compute the first derivative
  * with respect to frequency to get the expression below.
  */
-LALSIMULATION_CUDA_DEVICE double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
+LALSIMULATION_CUDA_HOST_DEVICE double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
   double eta = p->eta;
   double chi1 = p->chi1;
   double chi2 = p->chi2;
@@ -878,7 +875,11 @@ LALSIMULATION_CUDA_DEVICE double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoe
   double eta3 = eta*eta2;
   double Mf2 = Mf*Mf;
   double Pi = LAL_PI;
+#if defined(LALSIMULATION_CUDA_ENABLED)
+  double Pi2 = LAL_PI*LAL_PI;
+#else
   double Pi2 = powers_of_pi.two;
+#endif
   double Seta = sqrt(1.0 - 4.0*eta);
 
    return ((-969 + 1804*eta)*pow(Pi,2.0/3.0))/(1008.*pow(Mf,1.0/3.0))
@@ -900,7 +901,7 @@ LALSIMULATION_CUDA_DEVICE double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoe
 /**
  * Ansatz for the merger-ringdown amplitude. Equation 19 arXiv:1508.07253
  */
-LALSIMULATION_CUDA_DEVICE double AmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p) {
+LALSIMULATION_CUDA_HOST_DEVICE double AmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p) {
   double fRD = p->fRD;
   double fDM = p->fDM;
   double gamma1 = p->gamma1;
@@ -915,7 +916,7 @@ LALSIMULATION_CUDA_DEVICE double AmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoeff
 /**
  * first frequency derivative of AmpMRDAnsatz
  */
-LALSIMULATION_CUDA_DEVICE double DAmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p) {
+LALSIMULATION_CUDA_HOST_DEVICE double DAmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p) {
   double fRD = p->fRD;
   double fDM = p->fDM;
   double gamma1 = p->gamma1;
@@ -935,7 +936,7 @@ LALSIMULATION_CUDA_DEVICE double DAmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoef
 /**
  * Ansatz for the intermediate amplitude. Equation 21 arXiv:1508.07253
  */
-LALSIMULATION_CUDA_DEVICE double AmpIntAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
+LALSIMULATION_CUDA_HOST_DEVICE double AmpIntAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p) {
   double Mf2 = Mf*Mf;
   double Mf3 = Mf*Mf2;
   double Mf4 = Mf*Mf3;
@@ -949,12 +950,18 @@ LALSIMULATION_CUDA_DEVICE double AmpIntAnsatz(double Mf, IMRPhenomDAmplitudeCoef
  * as comments in the top of this file
  * Defined by Equation 27 and 28 arXiv:1508.07253
  */
-LALSIMULATION_CUDA_DEVICE double PhiInsAnsatzInt(double Mf, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn)
+LALSIMULATION_CUDA_HOST_DEVICE double PhiInsAnsatzInt(double Mf, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn)
 {
     XLAL_CHECK_CUDA(0 != pn, XLAL_EFAULT, "pn is NULL");
 
   // Assemble PN phasing series
+#if defined(LALSIMULATION_CUDA_ENABLED)
+  const double sixth = pow(LAL_PI, 1/6.0);
+  const double third = sixth*sixth;
+  const double v = powers_of_Mf->third * third;
+#else
   const double v = powers_of_Mf->third * powers_of_pi.third;
+#endif
   const double logv = log(v);
 
   double phasing = prefactors->initial_phasing;
@@ -980,7 +987,7 @@ LALSIMULATION_CUDA_DEVICE double PhiInsAnsatzInt(double Mf, UsefulPowers * power
 /**
  * Ansatz for the merger-ringdown phase Equation 14 arXiv:1508.07253
  */
-LALSIMULATION_CUDA_DEVICE double PhiMRDAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p)
+LALSIMULATION_CUDA_HOST_DEVICE double PhiMRDAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p)
 {
   double sqrootf = sqrt(f);
   double fpow1_5 = f * sqrootf;
@@ -996,7 +1003,7 @@ LALSIMULATION_CUDA_DEVICE double PhiMRDAnsatzInt(double f, IMRPhenomDPhaseCoeffi
 /**
  * ansatz for the intermediate phase defined by Equation 16 arXiv:1508.07253
  */
-LALSIMULATION_CUDA_DEVICE double PhiIntAnsatz(double Mf, IMRPhenomDPhaseCoefficients *p) {
+LALSIMULATION_CUDA_HOST_DEVICE double PhiIntAnsatz(double Mf, IMRPhenomDPhaseCoefficients *p) {
   // 1./eta in paper omitted and put in when need in the functions:
   // ComputeIMRPhenDPhaseConnectionCoefficients
   // IMRPhenDPhase

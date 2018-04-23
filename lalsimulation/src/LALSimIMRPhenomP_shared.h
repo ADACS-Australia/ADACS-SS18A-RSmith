@@ -13,12 +13,16 @@
 #include <lal/LALSimInspiral.h>
 
 #if defined(LALSIMULATION_CUDA_ENABLED)
+#define LALSIMULATION_CUDA_HOST   __host__
 #define LALSIMULATION_CUDA_DEVICE __device__
 #define LALSIMULATION_CUDA_GLOBAL __global__
 #else
+#define LALSIMULATION_CUDA_HOST  
 #define LALSIMULATION_CUDA_DEVICE 
 #define LALSIMULATION_CUDA_GLOBAL 
 #endif
+#define LALSIMULATION_CUDA_HOST_DEVICE LALSIMULATION_CUDA_HOST LALSIMULATION_CUDA_DEVICE
+#define LALSIMULATION_CUDA_DEVICE_HOST LALSIMULATION_CUDA_HOST_DEVICE
 
 #if defined(LALSIMULATION_CUDA_ENABLED)
 
@@ -238,7 +242,7 @@ class lalsimulation_cuda_exception : public lalsimulation_exception_base {
 
 #endif
 
-LALSIMULATION_CUDA_DEVICE int PhenomPCoreOneFrequency(
+LALSIMULATION_CUDA_HOST_DEVICE int PhenomPCoreOneFrequency(
   const REAL8 fHz,                            
   const REAL8 eta,                            
   const REAL8 chi1_l,                         
@@ -263,16 +267,16 @@ LALSIMULATION_CUDA_DEVICE int PhenomPCoreOneFrequency(
   PhiInsPrefactors *phi_prefactors);
 
 /* Simple 2PN version of L, without any spin terms expressed as a function of v */
-LALSIMULATION_CUDA_DEVICE REAL8 L2PNR(
+LALSIMULATION_CUDA_HOST_DEVICE REAL8 L2PNR(
   const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 eta  /**< Symmetric mass-ratio */
 );
 
-LALSIMULATION_CUDA_DEVICE REAL8 L2PNR_v1(
+LALSIMULATION_CUDA_HOST_DEVICE REAL8 L2PNR_v1(
   const REAL8 v,   /**< Cubic root of (Pi * Frequency (geometric)) */
   const REAL8 eta  /**< Symmetric mass-ratio */
 );
-LALSIMULATION_CUDA_DEVICE void WignerdCoefficients(
+LALSIMULATION_CUDA_HOST_DEVICE void WignerdCoefficients(
   REAL8 *cos_beta_half,   /**< Output: cos(beta/2) */
   REAL8 *sin_beta_half,   /**< Output: sin(beta/2) */
   const REAL8 v,          /**< Cubic root of (Pi * Frequency (geometric)) */
@@ -281,7 +285,7 @@ LALSIMULATION_CUDA_DEVICE void WignerdCoefficients(
   const REAL8 Sp          /**< Dimensionfull spin component in the orbital plane */
 );
 
-LALSIMULATION_CUDA_DEVICE void WignerdCoefficients_SmallAngleApproximation(
+LALSIMULATION_CUDA_HOST_DEVICE void WignerdCoefficients_SmallAngleApproximation(
   REAL8 *cos_beta_half, /**< Output: cos(beta/2) */
   REAL8 *sin_beta_half, /**< Output: sin(beta/2) */
   const REAL8 v,        /**< Cubic root of (Pi * Frequency (geometric)) */
@@ -290,31 +294,31 @@ LALSIMULATION_CUDA_DEVICE void WignerdCoefficients_SmallAngleApproximation(
   const REAL8 Sp        /**< Dimensionfull spin component in the orbital plane */
 );
 
-LALSIMULATION_CUDA_DEVICE int IMRPhenomCGenerateAmpPhase( REAL8 *amplitude, REAL8 *phasing, REAL8 f, REAL8 eta, const BBHPhenomCParams *params);
+LALSIMULATION_CUDA_HOST_DEVICE int IMRPhenomCGenerateAmpPhase( REAL8 *amplitude, REAL8 *phasing, REAL8 f, REAL8 eta, const BBHPhenomCParams *params);
 
 /**
  * must be called before the first usage of *p
  */
-LALSIMULATION_CUDA_DEVICE int init_useful_powers(UsefulPowers * p, REAL8 number);
-LALSIMULATION_CUDA_DEVICE double IMRPhenDAmplitude(double f, IMRPhenomDAmplitudeCoefficients *p, UsefulPowers *powers_of_f, AmpInsPrefactors * prefactors);
-LALSIMULATION_CUDA_DEVICE double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, UsefulPowers *powers_of_f, PhiInsPrefactors * prefactors);
-LALSIMULATION_CUDA_DEVICE REAL8 wPlus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params );
-LALSIMULATION_CUDA_DEVICE REAL8 wMinus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params );
-LALSIMULATION_CUDA_DEVICE bool StepFunc_boolean(const double t, const double t1);
-LALSIMULATION_CUDA_DEVICE double AmpInsAnsatz(double Mf, UsefulPowers * powers_of_Mf, AmpInsPrefactors * prefactors);
-LALSIMULATION_CUDA_DEVICE double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p);
-LALSIMULATION_CUDA_DEVICE double AmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
-LALSIMULATION_CUDA_DEVICE double DAmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
-LALSIMULATION_CUDA_DEVICE double AmpIntAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
-LALSIMULATION_CUDA_DEVICE double PhiInsAnsatzInt(double f, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
-LALSIMULATION_CUDA_DEVICE double PhiMRDAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p);
-LALSIMULATION_CUDA_DEVICE double PhiIntAnsatz(double f, IMRPhenomDPhaseCoefficients *p);
+LALSIMULATION_CUDA_HOST_DEVICE LALSIMULATION_CUDA_HOST int init_useful_powers(UsefulPowers * p, REAL8 number);
+LALSIMULATION_CUDA_HOST_DEVICE double IMRPhenDAmplitude(double f, IMRPhenomDAmplitudeCoefficients *p, UsefulPowers *powers_of_f, AmpInsPrefactors * prefactors);
+LALSIMULATION_CUDA_HOST_DEVICE double IMRPhenDPhase(double f, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn, UsefulPowers *powers_of_f, PhiInsPrefactors * prefactors);
+LALSIMULATION_CUDA_HOST_DEVICE REAL8 wPlus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params );
+LALSIMULATION_CUDA_HOST_DEVICE REAL8 wMinus( const REAL8 f, const REAL8 f0, const REAL8 d, const BBHPhenomCParams *params );
+LALSIMULATION_CUDA_HOST_DEVICE bool StepFunc_boolean(const double t, const double t1);
+LALSIMULATION_CUDA_HOST_DEVICE double AmpInsAnsatz(double Mf, UsefulPowers * powers_of_Mf, AmpInsPrefactors * prefactors);
+LALSIMULATION_CUDA_HOST_DEVICE double DAmpInsAnsatz(double Mf, IMRPhenomDAmplitudeCoefficients* p);
+LALSIMULATION_CUDA_HOST_DEVICE double AmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
+LALSIMULATION_CUDA_HOST_DEVICE double DAmpMRDAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
+LALSIMULATION_CUDA_HOST_DEVICE double AmpIntAnsatz(double f, IMRPhenomDAmplitudeCoefficients* p);
+LALSIMULATION_CUDA_HOST_DEVICE double PhiInsAnsatzInt(double f, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
+LALSIMULATION_CUDA_HOST_DEVICE double PhiMRDAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p);
+LALSIMULATION_CUDA_HOST_DEVICE double PhiIntAnsatz(double f, IMRPhenomDPhaseCoefficients *p);
 
 
 /**
  * calc square of number without floating point 'pow'
  */
-LALSIMULATION_CUDA_DEVICE inline double pow_2_of(double number)
+LALSIMULATION_CUDA_HOST_DEVICE inline double pow_2_of(double number)
 {
     return (number*number);
 }
@@ -322,7 +326,7 @@ LALSIMULATION_CUDA_DEVICE inline double pow_2_of(double number)
 /**
  * calc cube of number without floating point 'pow'
  */
-LALSIMULATION_CUDA_DEVICE inline double pow_3_of(double number)
+LALSIMULATION_CUDA_HOST_DEVICE inline double pow_3_of(double number)
 {
     return (number*number*number);
 }
@@ -330,7 +334,7 @@ LALSIMULATION_CUDA_DEVICE inline double pow_3_of(double number)
 /**
  * calc fourth power of number without floating point 'pow'
  */
-LALSIMULATION_CUDA_DEVICE inline double pow_4_of(double number)
+LALSIMULATION_CUDA_HOST_DEVICE inline double pow_4_of(double number)
 {
     double pow2 = pow_2_of(number);
     return pow2 * pow2;

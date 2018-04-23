@@ -22,6 +22,8 @@
 #include <gsl/gsl_math.h>
 #include <lal/Sequence.h>
 #include "LALSimIMRPhenomD_internals.h"
+#include "LALSimIMRPhenomP_shared.h"
+
 UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.h
 
 #ifndef _OPENMP
