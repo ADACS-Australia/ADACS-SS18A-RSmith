@@ -127,7 +127,6 @@ pkginclude_HEADERS = \
 	LALSimUniversalRelations.h
 
 noinst_HEADERS = \
-	cuda_complex.hpp \
 	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
 	LALSimIMRSpinPrecEOBEulerAngles.c \
 	LALSimIMRSpinPrecEOBWfGen.c \
@@ -188,11 +187,11 @@ noinst_HEADERS = \
 lib_LTLIBRARIES = liblalsimulation.la
 
 liblalsimulation_la_SOURCES = \
-	LALSimIMRPhenomC.cpp \
-	LALSimIMRPhenomD.cpp \
-	LALSimIMRPhenomP.cpp \
-	LALSimIMRPhenomC_internals.cpp \
-	LALSimIMRPhenomD_internals.cpp \
+	LALSimIMRPhenomC.c \
+	LALSimIMRPhenomD.c \
+	LALSimIMRPhenomP.c \
+	LALSimIMRPhenomC_internals.c \
+	LALSimIMRPhenomD_internals.c \
 	LALSimBlackHoleRingdownPrec.c \
 	LALSimBlackHoleRingdown.c \
 	LALSimBurst.c \

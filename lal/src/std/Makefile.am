@@ -18,6 +18,7 @@ pkginclude_HEADERS = \
 	StringInput.h \
 	XLALError.h \
 	XLALGSL.h \
+	cuda_complex.hh \
 	$(END_OF_LIST)
 
 noinst_LTLIBRARIES = libstd.la
