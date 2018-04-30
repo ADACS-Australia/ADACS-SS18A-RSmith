@@ -46,11 +46,10 @@
 
 #include "config.h"
 
-#include "LALSimIMRPhenomP_shared.h"
-
 #include "LALSimIMR.h"
 
 #include "LALSimIMRPhenomP.h"
+#include "LALSimIMRPhenomP_shared.hh"
 
 #ifndef _OPENMP
 #define omp ignore

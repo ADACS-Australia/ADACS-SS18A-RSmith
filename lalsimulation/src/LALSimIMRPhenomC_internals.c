@@ -23,6 +23,7 @@
 
 
 #include "LALSimIMRPhenomC_internals.h"
+#include "LALSimIMRPhenomP_shared.hh"
 
 /**
  *

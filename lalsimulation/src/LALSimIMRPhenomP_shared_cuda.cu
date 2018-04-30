@@ -40,10 +40,8 @@
 
 #include "LALSimIMR.h"
 
-#include "cuda_complex.hpp"
-
 #include "LALSimIMRPhenomP.h"
-#include "LALSimIMRPhenomP_shared.h"
+#include "LALSimIMRPhenomP_shared.hh"
 
 #if defined(LALSIMULATION_CUDA_ENABLED) && defined(__CUDA_ARCH__)
 #define _XLAL_CHECK_CUDA(assertion,error_code,...) \

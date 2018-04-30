@@ -81,7 +81,7 @@ of this waveform.
 */
 
 #include "LALSimIMRPhenomD_internals.h"
-#include "LALSimIMRPhenomP_shared.h"
+#include "LALSimIMRPhenomP_shared.hh"
 
 /*
  *

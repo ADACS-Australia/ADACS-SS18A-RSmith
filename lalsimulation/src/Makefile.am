@@ -152,7 +152,6 @@ noinst_HEADERS = \
 	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomD_internals.h \
 	LALSimIMRPhenomP.h \
-	LALSimIMRPhenomP_shared.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
@@ -182,7 +181,8 @@ noinst_HEADERS = \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
 	LALSimIMRSpinEOBHamiltonian.h \
-	LALSimNRTunedTides.h
+	LALSimNRTunedTides.h \
+	LALSimIMRPhenomP_shared.hh 
 
 lib_LTLIBRARIES = liblalsimulation.la
 

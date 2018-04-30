@@ -22,7 +22,7 @@
 #include <gsl/gsl_math.h>
 #include <lal/Sequence.h>
 #include "LALSimIMRPhenomD_internals.h"
-#include "LALSimIMRPhenomP_shared.h"
+#include "LALSimIMRPhenomP_shared.hh"
 
 UsefulPowers powers_of_pi;	// declared in LALSimIMRPhenomD_internals.h
 

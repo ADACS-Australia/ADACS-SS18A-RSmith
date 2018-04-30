@@ -12,7 +12,8 @@
 #include <lal/FrequencySeries.h>
 #include <lal/LALSimInspiral.h>
 
-#if defined(LALSIMULATION_CUDA_ENABLED)
+//#if defined(LALSIMULATION_CUDA_ENABLED)
+#if defined(__CUDACC__)
 #define LALSIMULATION_CUDA_HOST   __host__
 #define LALSIMULATION_CUDA_DEVICE __device__
 #define LALSIMULATION_CUDA_GLOBAL __global__
@@ -25,11 +26,6 @@
 #define LALSIMULATION_CUDA_DEVICE_HOST LALSIMULATION_CUDA_HOST_DEVICE
 
 #if defined(LALSIMULATION_CUDA_ENABLED)
-
-#include <sstream>
-#include <string>
-#include <cuda_runtime.h>
-
 void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         REAL8Sequence *freqs,
         UINT4 offset,
@@ -56,7 +52,11 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         COMPLEX16FrequencySeries *hctilde_host,
         REAL8 *phis_host,
         int   *errcode);
+#endif
 
+#if defined(__CUDACC__)
+#include <string>
+#include <cuda_runtime.h>
 __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
         REAL8Sequence *freqs,
         UINT4 offset,
@@ -239,7 +239,6 @@ class lalsimulation_cuda_exception : public lalsimulation_exception_base {
                      if(implementation_code!=GLOBAL) notify_of_global_error(cuda_code);
         }
 };
-
 #endif
 
 LALSIMULATION_CUDA_HOST_DEVICE int PhenomPCoreOneFrequency(
@@ -313,7 +312,6 @@ LALSIMULATION_CUDA_HOST_DEVICE double AmpIntAnsatz(double f, IMRPhenomDAmplitude
 LALSIMULATION_CUDA_HOST_DEVICE double PhiInsAnsatzInt(double f, UsefulPowers * powers_of_Mf, PhiInsPrefactors * prefactors, IMRPhenomDPhaseCoefficients *p, PNPhasingSeries *pn);
 LALSIMULATION_CUDA_HOST_DEVICE double PhiMRDAnsatzInt(double f, IMRPhenomDPhaseCoefficients *p);
 LALSIMULATION_CUDA_HOST_DEVICE double PhiIntAnsatz(double f, IMRPhenomDPhaseCoefficients *p);
-
 
 /**
  * calc square of number without floating point 'pow'
