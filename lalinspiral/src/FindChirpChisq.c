@@ -262,7 +262,7 @@ LALFindChirpChisqVeto (
   }
 
 
-#ifdef LALINSPIRAL_CUDA_ENABLED
+#if defined(LALINSPIRAL_CUDA_ENABLED)
   Chisq_GPU(chisqVec->data, input->qVec->data, input->qtildeVec->data, params->chisqBinVec->data,
       input->qVec->length, params->chisqBinVec->length - 1, sqrt( params->norm ));
 #else

@@ -44,8 +44,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStddef.h>
 
-#include "config.h"
-
 #include "LALSimIMR.h"
 
 #include "LALSimIMRPhenomP.h"

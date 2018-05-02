@@ -1,6 +1,12 @@
 #ifndef LALSIMIMRPHENOMP_SHARED_H
 #define LALSIMIMRPHENOMP_SHARED_H
 
+#if defined(__cplusplus)
+extern "C" {
+#elif 0
+} /* so that editors will match preceding brace */
+#endif
+
 #include <lal/LALStdlib.h>
 #include <lal/LALSimIMR.h>
 #include <lal/LALConstants.h>
@@ -337,5 +343,11 @@ LALSIMULATION_CUDA_HOST_DEVICE inline double pow_4_of(double number)
     double pow2 = pow_2_of(number);
     return pow2 * pow2;
 }
+
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
 
 #endif

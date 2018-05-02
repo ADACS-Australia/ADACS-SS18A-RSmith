@@ -17,12 +17,6 @@
  *  MA  02111-1307  USA
  */
 
-#include <lal/cuda_complex.hh>
-typedef complex<float>  COMPLEX8;       /**< Single-precision floating-point complex number (8 bytes total) */
-typedef complex<double> COMPLEX16;      /**< Double-precision floating-point complex number (16 bytes total) */
-
-#include <complex.h>
-
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
@@ -283,7 +277,7 @@ __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
 
       // Throw execption if necessary
       if (per_thread_errcode != XLAL_SUCCESS)
-        cause_cuda_error(1010101010); 
+        cause_cuda_error(101010101); 
 
       (hptilde->data->data)[j] = hp_val;
       (hctilde->data->data)[j] = hc_val;

@@ -102,6 +102,12 @@ typedef uint64_t UINT8;		/**< Eight-byte unsigned integer; on some platforms thi
 typedef float REAL4;    /**< Single precision real floating-point number (4 bytes). */
 typedef double REAL8;   /**< Double precision real floating-point number (8 bytes). */
 
+#if 0
+{ /* so that editors will match succeeding brace */
+#elif defined(__cplusplus)
+}
+#endif
+
 /* Complex types */
 #ifndef SWIG /* exclude from SWIG interface */
 
@@ -115,7 +121,9 @@ typedef double REAL8;   /**< Double precision real floating-point number (8 byte
 #endif
 
 #ifdef _LAL_CPP_COMPLEX_NUMBERS_ 
-
+#include <lal/cuda_complex.hh>
+typedef complex<float>  COMPLEX8;       /**< Single-precision floating-point complex number (8 bytes total) */
+typedef complex<double> COMPLEX16;      /**< Double-precision floating-point complex number (16 bytes total) */
 #elif defined(_LAL_C99_COMPLEX_NUMBERS_)
 
 #include <complex.h>
@@ -176,11 +184,5 @@ static _LAL_INLINE_ COMPLEX16 cpolar(const REAL8 r, const REAL8 th) {
 #endif /* SWIG */
 
 /*@}*/
-
-#if 0
-{ /* so that editors will match succeeding brace */
-#elif defined(__cplusplus)
-}
-#endif
 
 #endif /* _LALATOMICDATATYPES_H */
