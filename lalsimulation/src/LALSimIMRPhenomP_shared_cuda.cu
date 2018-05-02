@@ -17,6 +17,12 @@
  *  MA  02111-1307  USA
  */
 
+#include <lal/cuda_complex.hh>
+typedef complex<float>  COMPLEX8;       /**< Single-precision floating-point complex number (8 bytes total) */
+typedef complex<double> COMPLEX16;      /**< Double-precision floating-point complex number (16 bytes total) */
+
+#include <complex.h>
+
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>
@@ -430,9 +436,10 @@ LALSIMULATION_CUDA_HOST_DEVICE int PhenomPCoreOneFrequency(
       break;
   }
 
+  const COMPLEX16 MY_I = complex<double>(0,1);
   phPhenom -= 2.*phic; /* Note: phic is orbital phase */
   REAL8 amp0 = M * LAL_MRSUN_SI * M * LAL_MTSUN_SI / distance;
-  COMPLEX16 hP = amp0 * aPhenom * (cos(phPhenom) - I*sin(phPhenom));//cexp(-I*phPhenom); /* Assemble IMRPhenom waveform. */
+  COMPLEX16 hP = amp0 * aPhenom * (cos(phPhenom) - MY_I * sin(phPhenom));//cexp(-I*phPhenom); /* Assemble IMRPhenom waveform. */
 
   /* Compute PN NNLO angles */
   const REAL8 omega = LAL_PI * f;
@@ -487,7 +494,7 @@ LALSIMULATION_CUDA_HOST_DEVICE int PhenomPCoreOneFrequency(
 
   /* Sum up contributions to \tilde h+ and \tilde hx */
   /* Precompute powers of e^{i m alpha} */
-  COMPLEX16 cexp_i_alpha =  cos(alpha) + I*sin(alpha);//cexp(+I*alpha);
+  COMPLEX16 cexp_i_alpha =  cos(alpha) + MY_I*sin(alpha);//cexp(+MY_I*alpha);
   COMPLEX16 cexp_2i_alpha = cexp_i_alpha*cexp_i_alpha;
   COMPLEX16 cexp_mi_alpha = 1.0/cexp_i_alpha;
   COMPLEX16 cexp_m2i_alpha = cexp_mi_alpha*cexp_mi_alpha;
@@ -496,10 +503,10 @@ LALSIMULATION_CUDA_HOST_DEVICE int PhenomPCoreOneFrequency(
     COMPLEX16 T2m   = cexp_im_alpha[-m+2] * dm2[m+2] *      Y2mA[m+2];  /*  = cexp(-I*m*alpha) * dm2[m+2] *      Y2mA[m+2] */
     COMPLEX16 Tm2m  = cexp_im_alpha[m+2]  * d2[m+2]  * conj(Y2mA[m+2]); /*  = cexp(+I*m*alpha) * d2[m+2]  * conj(Y2mA[m+2]) */
     hp_sum +=     T2m + Tm2m;
-    hc_sum += +I*(T2m - Tm2m);
+    hc_sum += +MY_I*(T2m - Tm2m);
   }
 
-  COMPLEX16 eps_phase_hP = (cos(2*epsilon) - I*sin(2*epsilon)) *hP /2.0;//cexp(-2*I*epsilon) * hP / 2.0;
+  COMPLEX16 eps_phase_hP = (cos(2*epsilon) - MY_I*sin(2*epsilon)) *hP /2.0;//cexp(-2*I*epsilon) * hP / 2.0;
   *hp = eps_phase_hP * hp_sum;
   *hc = eps_phase_hP * hc_sum;
 

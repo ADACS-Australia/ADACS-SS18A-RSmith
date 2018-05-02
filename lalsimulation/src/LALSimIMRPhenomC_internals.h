@@ -24,6 +24,7 @@
 /* The paper refered to here as the Main paper, is Phys. Rev. D 82, 064016 (2010)
  * */
 
+#if !defined(__CUDACC__)
 #include <math.h>
 #include <complex.h>
 
@@ -36,6 +37,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
+#endif
 
 
 /*********************************************************************/

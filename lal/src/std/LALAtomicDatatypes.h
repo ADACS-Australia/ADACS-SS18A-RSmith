@@ -107,16 +107,16 @@ typedef double REAL8;   /**< Double precision real floating-point number (8 byte
 
 /* Use C99 complex numbers where available: C99, gcc with non-ANSI extensions */
 #if !defined(__cplusplus)
-//# if __STDC_VERSION__ >= 199901L || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
+# if __STDC_VERSION__ >= 199901L || (defined(__GNUC__) && !defined(__STRICT_ANSI__))
 #  define _LAL_C99_COMPLEX_NUMBERS_
-//# endif
-#else
-#  define _LAL_CPP_COMPLEX_NUMBERS_
+# endif
+#else 
+# define _LAL_CPP_COMPLEX_NUMBERS_
 #endif
 
-#define _LAL_C99_COMPLEX_NUMBERS_
+#ifdef _LAL_CPP_COMPLEX_NUMBERS_ 
 
-#ifdef _LAL_C99_COMPLEX_NUMBERS_
+#elif defined(_LAL_C99_COMPLEX_NUMBERS_)
 
 #include <complex.h>
 
@@ -128,10 +128,6 @@ typedef double _Complex COMPLEX16;	/**< Double-precision floating-point complex 
 #define cpolarf(r, th) (((REAL4)(r)) * cexpf(crectf(0, th)))		/**< Construct a COMPLEX8 from polar modulus and argument */
 #define cpolar(r, th)  (((REAL8)(r)) * cexp(crect(0, th)))		/**< Construct a COMPLEX16 from polar modulus and argument */
 
-#elif defined(_LAL_CPP_COMPLEX_NUMBERS_)
-#include <lal/cuda_complex.hh>
-typedef complex<float>  COMPLEX8;	/**< Single-precision floating-point complex number (8 bytes total) */
-typedef complex<double> COMPLEX16;	/**< Double-precision floating-point complex number (16 bytes total) */
 #else 
 /** \cond DONT_DOXYGEN */
 
