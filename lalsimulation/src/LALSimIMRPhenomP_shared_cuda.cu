@@ -43,33 +43,9 @@
 #include "LALSimIMRPhenomP.h"
 #include "LALSimIMRPhenomP_shared.hh"
 
-#if defined(LALSIMULATION_CUDA_ENABLED) && defined(__CUDA_ARCH__)
-#define _XLAL_CHECK_CUDA(assertion,error_code,...) \
-    do { \
-        if (!(assertion)) { \
-            cause_cuda_error(error_code); \
-        } \
-    } while (0)
-#define _XLAL_ERROR_CUDA(error_code,...) \
-    do { \
-        cause_cuda_error(error_code); \
-    } while (0)
-#define _XLALPrintError(error_code,...) \
-    do { } while (0)
-#define XLAL_CHECK_CUDA      _XLAL_CHECK_CUDA
-#define XLAL_CHECK_CUDA_VOID _XLAL_CHECK_CUDA
-#define XLAL_ERROR_CUDA      _XLAL_ERROR_CUDA
-#define XLALPrintError_CUDA  _XLALPrintError
-#else
-#define XLAL_CHECK_CUDA      XLAL_CHECK
-#define XLAL_CHECK_CUDA_VOID XLAL_CHECK_VOID
-#define XLAL_ERROR_CUDA      XLAL_ERROR
-#define XLALPrintError_CUDA  XLALPrintError
-#endif
-
 #if defined(LALSIMULATION_CUDA_ENABLED)
 void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
-        REAL8Sequence *freqs,
+        REAL8Sequence *freqs_host,
         UINT4 offset,
         const REAL8 eta,
         const REAL8 chi1_l,
@@ -94,30 +70,82 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         COMPLEX16FrequencySeries *hctilde_host,
         REAL8 *phis_host,
         int   *errcode){
-  // Copy inputs to device
-  IMRPhenomDAmplitudeCoefficients pAmp;
-  IMRPhenomDPhaseCoefficients pPhi;
-  BBHPhenomCParams PCparams;
-  PNPhasingSeries pn;
-  NNLOanglecoeffs angcoeffs;
-  SpinWeightedSphericalHarmonic_l2 Y2m;
-  AmpInsPrefactors amp_prefactors;
-  PhiInsPrefactors phi_prefactors;
-  COMPLEX16FrequencySeries *hptilde;
-  COMPLEX16FrequencySeries *hctilde;
-  REAL8 *phis;
+
+  // Establish a device context
+  throw_on_cuda_error(cudaFree(0),lalsimulation_cuda_exception::INIT);
+
+  // Initialize device
+  REAL8 *freqs=NULL;
+  IMRPhenomDAmplitudeCoefficients *pAmp=NULL;
+  IMRPhenomDPhaseCoefficients *pPhi=NULL;
+  BBHPhenomCParams *PCparams=NULL;
+  PNPhasingSeries *pn=NULL;
+  NNLOanglecoeffs *angcoeffs=NULL;
+  SpinWeightedSphericalHarmonic_l2 *Y2m=NULL;
+  AmpInsPrefactors *amp_prefactors=NULL;
+  PhiInsPrefactors *phi_prefactors=NULL;
+  COMPLEX16 *hptilde=NULL;
+  COMPLEX16 *hctilde=NULL;
+  REAL8 *phis=NULL;
   try{
-      throw_on_cuda_error(cudaMemcpy(&pAmp,          pAmp_host,          sizeof(IMRPhenomDAmplitudeCoefficients), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&pPhi,          pPhi_host,          sizeof(IMRPhenomDPhaseCoefficients),     cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&PCparams,      PCparams_host,      sizeof(BBHPhenomCParams),                cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&pn,            pn_host,            sizeof(PNPhasingSeries),                 cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&angcoeffs,     angcoeffs_host,     sizeof(NNLOanglecoeffs),                 cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&Y2m,           Y2m_host,           sizeof(SpinWeightedSphericalHarmonic_l2),cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&amp_prefactors,amp_prefactors_host,sizeof(AmpInsPrefactors),                cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(&phi_prefactors,phi_prefactors_host,sizeof(PhiInsPrefactors),                cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMalloc((void **)&hptilde,L_fCut*sizeof(COMPLEX16)),lalsimulation_cuda_exception::MALLOC);
-      throw_on_cuda_error(cudaMalloc((void **)&hctilde,L_fCut*sizeof(COMPLEX16)),lalsimulation_cuda_exception::MALLOC);
-      throw_on_cuda_error(cudaMalloc((void **)&phis,   L_fCut*sizeof(REAL8)),    lalsimulation_cuda_exception::MALLOC);
+      // Initialize inputs
+      if(freqs_host->data!=NULL){
+        throw_on_cuda_error(cudaMalloc(&freqs,                 L_fCut*sizeof(REAL8)),                        lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMemcpy(freqs, freqs_host->data,L_fCut*sizeof(REAL8), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
+      }
+
+      if(pAmp_host!=NULL){
+        throw_on_cuda_error(cudaMalloc(&pAmp,         sizeof(IMRPhenomDAmplitudeCoefficients)),                        lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMemcpy(pAmp,pAmp_host,sizeof(IMRPhenomDAmplitudeCoefficients), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
+      }
+
+      if(pPhi_host!=NULL){
+        throw_on_cuda_error(cudaMalloc(&pPhi,         sizeof(IMRPhenomDPhaseCoefficients)),                        lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMemcpy(pPhi,pPhi_host,sizeof(IMRPhenomDPhaseCoefficients), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
+      }
+
+      if(PCparams_host!=NULL){
+        throw_on_cuda_error(cudaMalloc(&PCparams,              sizeof(BBHPhenomCParams)),                        lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMemcpy(PCparams, PCparams_host,sizeof(BBHPhenomCParams), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
+      }
+
+      if(pn_host!=NULL){
+        throw_on_cuda_error(cudaMalloc(&pn,        sizeof(PNPhasingSeries)),                        lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMemcpy(pn, pn_host,sizeof(PNPhasingSeries), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
+      }
+
+      if(angcoeffs_host!=NULL){
+        throw_on_cuda_error(cudaMalloc(&angcoeffs,               sizeof(NNLOanglecoeffs)),                        lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMemcpy(angcoeffs, angcoeffs_host,sizeof(NNLOanglecoeffs), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
+      }
+
+      if(Y2m_host!=NULL){
+        throw_on_cuda_error(cudaMalloc(&Y2m,         sizeof(SpinWeightedSphericalHarmonic_l2)),                        lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMemcpy(Y2m, Y2m_host,sizeof(SpinWeightedSphericalHarmonic_l2), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
+      }
+
+      if(amp_prefactors_host!=NULL){
+        throw_on_cuda_error(cudaMalloc(&amp_prefactors,                    sizeof(AmpInsPrefactors)),                        lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMemcpy(amp_prefactors, amp_prefactors_host,sizeof(AmpInsPrefactors), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
+      }
+
+      if(phi_prefactors_host!=NULL){
+        throw_on_cuda_error(cudaMalloc(&phi_prefactors,                    sizeof(PhiInsPrefactors)),                        lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMemcpy(phi_prefactors, phi_prefactors_host,sizeof(PhiInsPrefactors), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
+      }
+
+      // Initialize outputs
+      if(hptilde_host->data!=NULL){
+        throw_on_cuda_error(cudaMalloc(&hptilde,                        L_fCut*sizeof(COMPLEX16)),                        lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMemcpy(hptilde,hptilde_host->data->data,L_fCut*sizeof(COMPLEX16), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
+      }
+
+      if(hctilde_host->data!=NULL){
+        throw_on_cuda_error(cudaMalloc(&hctilde,                        L_fCut*sizeof(COMPLEX16)),                        lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMemcpy(hctilde,hctilde_host->data->data,L_fCut*sizeof(COMPLEX16), cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
+      }
+
+      throw_on_cuda_error(cudaMalloc((void **)&phis,                     L_fCut*sizeof(REAL8)),                            lalsimulation_cuda_exception::MALLOC);
   }
   catch(const lalsimulation_cuda_exception e){
       e.process_exception();
@@ -137,18 +165,18 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
           distance,
           M,
           phic,
-          &pAmp,
-          &pPhi,
-          &PCparams,
-          &pn,
-          &angcoeffs,
-          &Y2m,
+          pAmp,
+          pPhi,
+          PCparams,
+          pn,
+          angcoeffs,
+          Y2m,
           alphaNNLOoffset,
           alpha0,
           epsilonNNLOoffset,
           IMRPhenomP_version,
-          &amp_prefactors,
-          &phi_prefactors,
+          amp_prefactors,
+          phi_prefactors,
           hptilde,
           hctilde,
           phis)),lalsimulation_cuda_exception::KERNEL_PHENOMPCOREONEFREQUENCY);
@@ -159,11 +187,13 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
       e.process_exception();
   }
 
+cudaDeviceSynchronize();
+
   // Offload results
   try{
-      throw_on_cuda_error(cudaMemcpy(hptilde_host,hptilde,L_fCut*sizeof(COMPLEX16FrequencySeries),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(hctilde_host,hctilde,L_fCut*sizeof(COMPLEX16FrequencySeries),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
-      throw_on_cuda_error(cudaMemcpy(phis_host,   phis,   L_fCut*sizeof(REAL8),                   cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+      throw_on_cuda_error(cudaMemcpy(hptilde_host->data->data,hptilde,L_fCut*sizeof(COMPLEX16), cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+      throw_on_cuda_error(cudaMemcpy(hctilde_host->data->data,hctilde,L_fCut*sizeof(COMPLEX16), cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+      throw_on_cuda_error(cudaMemcpy(phis_host,               phis,   L_fCut*sizeof(REAL8),     cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
   }
   catch(const lalsimulation_cuda_exception e){
       e.process_exception();
@@ -171,13 +201,33 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
 
   // Clean-up
   try{
-      throw_on_cuda_error(cudaFree(hptilde),lalsimulation_cuda_exception::FREE);
-      throw_on_cuda_error(cudaFree(hctilde),lalsimulation_cuda_exception::FREE);
-      throw_on_cuda_error(cudaFree(phis),   lalsimulation_cuda_exception::FREE);
+      if(phis!=NULL)           throw_on_cuda_error(cudaFree(phis),          lalsimulation_cuda_exception::FREE);
+      if(hctilde!=NULL)        throw_on_cuda_error(cudaFree(hctilde),       lalsimulation_cuda_exception::FREE);
+      if(hptilde!=NULL)        throw_on_cuda_error(cudaFree(hptilde),       lalsimulation_cuda_exception::FREE);
+      if(phi_prefactors!=NULL) throw_on_cuda_error(cudaFree(phi_prefactors),lalsimulation_cuda_exception::FREE);
+      if(amp_prefactors!=NULL) throw_on_cuda_error(cudaFree(amp_prefactors),lalsimulation_cuda_exception::FREE);
+      if(Y2m!=NULL)            throw_on_cuda_error(cudaFree(Y2m),           lalsimulation_cuda_exception::FREE);
+      if(angcoeffs!=NULL)      throw_on_cuda_error(cudaFree(angcoeffs),     lalsimulation_cuda_exception::FREE);
+      if(pn!=NULL)             throw_on_cuda_error(cudaFree(pn),            lalsimulation_cuda_exception::FREE);
+      if(PCparams!=NULL)       throw_on_cuda_error(cudaFree(PCparams),      lalsimulation_cuda_exception::FREE);
+      if(pPhi!=NULL)           throw_on_cuda_error(cudaFree(pPhi),          lalsimulation_cuda_exception::FREE);
+      if(pAmp!=NULL)           throw_on_cuda_error(cudaFree(pAmp),          lalsimulation_cuda_exception::FREE);
+      if(freqs!=NULL)          throw_on_cuda_error(cudaFree(freqs),         lalsimulation_cuda_exception::FREE);
   }
   catch(const lalsimulation_cuda_exception e){
       e.process_exception();
   }
+}
+
+// Call this function in kernels to put the GPU in an error state that can be caught after as an exception
+//    This is not necessarily the best way, but it will do the job for now.  This is based on:
+// https://devtalk.nvidia.com/default/topic/418479/how-to-trigger-a-cuda-error-from-inside-a-kernel/
+// We accept an error code and do something useless with so that the functionality is there
+// for the day when we come-up with a better way of throwing and reporting CUDA kernel errors.
+__device__ void inline cause_cuda_error(const int error_code){
+   int *adr = (int*)0xffffffff;
+   *adr = 12; // This should induce an error state
+   *adr = error_code; // This is to prevent a compiler warning
 }
 
 // These functions deal with any GPU exceptions, but should be called with the macros defined in the corresponding .hh file
@@ -223,19 +273,8 @@ __host__ void notify_of_global_error(int error_code)
   //MPI_Allreduce(MPI_IN_PLACE,&result,1,MPI_INT,MPI_MAX,run_globals.mpi_comm);
 }
 
-// Call this function in kernels to put the GPU in an error state that can be caught after as an exception
-//    This is not necessarily the best way, but it will do the job for now.  This is based on:
-// https://devtalk.nvidia.com/default/topic/418479/how-to-trigger-a-cuda-error-from-inside-a-kernel/
-// We accept an error code and do something useless with so that the functionality is there
-// for the day when we come-up with a better way of throwing and reporting CUDA kernel errors.
-__device__ void inline cause_cuda_error(const int error_code){
-   int *adr = (int*)0xffffffff;
-   *adr = 12; // This should induce an error state
-   *adr = error_code; // This is to prevent a compiler warning
-}
-
 __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
-        REAL8Sequence *freqs,
+        REAL8 *freqs,
         UINT4 offset,
         const REAL8 eta,
         const REAL8 chi1_l,
@@ -256,8 +295,8 @@ __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
         IMRPhenomP_version_type IMRPhenomP_version,
         AmpInsPrefactors *amp_prefactors,
         PhiInsPrefactors *phi_prefactors,
-        COMPLEX16FrequencySeries *hptilde,
-        COMPLEX16FrequencySeries *hctilde,
+        COMPLEX16 *hptilde,
+        COMPLEX16 *hctilde,
         REAL8 *phis){
 
     UINT4 i = (UINT4)(blockIdx.x*blockDim.x + threadIdx.x);
@@ -266,8 +305,8 @@ __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
       COMPLEX16 hp_val;
       COMPLEX16 hc_val;
       REAL8     phasing;
-      double    f = freqs->data[i];
-      int       j = i + offset; // shift index for frequency series if needed
+      REAL8     f = freqs[i];
+      UINT4     j = i + offset; // shift index for frequency series if needed
 
       // Generate the waveform
       int per_thread_errcode = PhenomPCoreOneFrequency(f, eta, chi1_l, chi2_l, chip, distance, M, phic,
@@ -279,10 +318,9 @@ __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
       if (per_thread_errcode != XLAL_SUCCESS)
         cause_cuda_error(101010101); 
 
-      (hptilde->data->data)[j] = hp_val;
-      (hctilde->data->data)[j] = hc_val;
-
-      phis[i] = phasing;
+      hptilde[j] = hp_val;
+      hctilde[j] = hc_val;
+      phis[i]    = phasing;
 
   }
 }

@@ -64,7 +64,7 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
 #include <string>
 #include <cuda_runtime.h>
 __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
-        REAL8Sequence *freqs,
+        REAL8 *freqs,
         UINT4 offset,
         const REAL8 eta,
         const REAL8 chi1_l,
@@ -85,9 +85,37 @@ __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
         IMRPhenomP_version_type IMRPhenomP_version,
         AmpInsPrefactors *amp_prefactors,
         PhiInsPrefactors *phi_prefactors,
-        COMPLEX16FrequencySeries *hptilde,
-        COMPLEX16FrequencySeries *hctilde,
+        COMPLEX16 *hptilde,
+        COMPLEX16 *hctilde,
         REAL8 *phis);
+
+// Device-side exception-handling 
+__device__ void inline cause_cuda_error();
+
+// Redefine LAL error handling macros for CUDA code
+#if defined(__CUDA_ARCH__)
+#define _XLAL_CHECK_CUDA(assertion,error_code,...) \
+    do { \
+        if (!(assertion)) { \
+            cause_cuda_error(error_code); \
+        } \
+    } while (0)
+#define _XLAL_ERROR_CUDA(error_code,...) \
+    do { \
+        cause_cuda_error(error_code); \
+    } while (0)
+#define _XLALPrintError(error_code,...) \
+    do { } while (0)
+#define XLAL_CHECK_CUDA      _XLAL_CHECK_CUDA
+#define XLAL_CHECK_CUDA_VOID _XLAL_CHECK_CUDA
+#define XLAL_ERROR_CUDA      _XLAL_ERROR_CUDA
+#define XLALPrintError_CUDA  _XLALPrintError
+#else
+#define XLAL_CHECK_CUDA      XLAL_CHECK
+#define XLAL_CHECK_CUDA_VOID XLAL_CHECK_VOID
+#define XLAL_ERROR_CUDA      XLAL_ERROR
+#define XLALPrintError_CUDA  XLALPrintError
+#endif
 
 // Host-side exception-handling routines
 __host__ void  _throw_on_generic_error(bool check_failure,int implementation_code,  const std::string file, const std::string func, int line);
@@ -97,9 +125,6 @@ __host__ void  _check_for_cuda_error  (int implementation_code, const std::strin
 __host__ void  _check_thread_sync     (int implementation_code, const std::string file, const std::string func, int line);
 __host__ void  _throw_on_global_error (const std::string file, const std::string func, int line);
 __host__ void  notify_of_global_error (int error_code);
-
-// Device-side exception-handling 
-__device__ void inline cause_cuda_error();
 
 // Wrap exception-handling calls with these macros to add exception location information to the error messages
 // N.B.: The ',' in the execution configuration part of a CUDA kernel call confuses the pre-processor ... so
@@ -182,6 +207,10 @@ class lalsimulation_exception_base : public std::exception {
             //    ABORT(EXIT_FAILURE);
             //else
             //    ABORT(EXIT_SUCCESS);
+            char msg[256];
+            fprintf(stderr,"%s, reported from %s() [%s:%d]\n",this->what(),this->func(),this->file(),this->line());
+            exit(1);
+            //XLAL_ERROR_CUDA(XLAL_EFAILED,msg);
         }
 };
 
