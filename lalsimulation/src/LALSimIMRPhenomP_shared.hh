@@ -92,31 +92,6 @@ __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
 // Device-side exception-handling 
 __device__ void inline cause_cuda_error();
 
-// Redefine LAL error handling macros for CUDA code
-#if defined(__CUDA_ARCH__)
-#define _XLAL_CHECK_CUDA(assertion,error_code,...) \
-    do { \
-        if (!(assertion)) { \
-            cause_cuda_error(error_code); \
-        } \
-    } while (0)
-#define _XLAL_ERROR_CUDA(error_code,...) \
-    do { \
-        cause_cuda_error(error_code); \
-    } while (0)
-#define _XLALPrintError(error_code,...) \
-    do { } while (0)
-#define XLAL_CHECK_CUDA      _XLAL_CHECK_CUDA
-#define XLAL_CHECK_CUDA_VOID _XLAL_CHECK_CUDA
-#define XLAL_ERROR_CUDA      _XLAL_ERROR_CUDA
-#define XLALPrintError_CUDA  _XLALPrintError
-#else
-#define XLAL_CHECK_CUDA      XLAL_CHECK
-#define XLAL_CHECK_CUDA_VOID XLAL_CHECK_VOID
-#define XLAL_ERROR_CUDA      XLAL_ERROR
-#define XLALPrintError_CUDA  XLALPrintError
-#endif
-
 // Host-side exception-handling routines
 __host__ void  _throw_on_generic_error(bool check_failure,int implementation_code,  const std::string file, const std::string func, int line);
 __host__ void  _throw_on_cuda_error   (cudaError_t cuda_code, int implementation_code,  const std::string file, const std::string func, int line);
@@ -274,6 +249,31 @@ class lalsimulation_cuda_exception : public lalsimulation_exception_base {
                      if(implementation_code!=GLOBAL) notify_of_global_error(cuda_code);
         }
 };
+#endif
+
+// Redefine LAL error handling macros for CUDA code
+#if defined(__CUDA_ARCH__)
+#define _XLAL_CHECK_CUDA(assertion,error_code,...) \
+    do { \
+        if (!(assertion)) { \
+            cause_cuda_error(error_code); \
+        } \
+    } while (0)
+#define _XLAL_ERROR_CUDA(error_code,...) \
+    do { \
+        cause_cuda_error(error_code); \
+    } while (0)
+#define _XLALPrintError(error_code,...) \
+    do { } while (0)
+#define XLAL_CHECK_CUDA      _XLAL_CHECK_CUDA
+#define XLAL_CHECK_CUDA_VOID _XLAL_CHECK_CUDA
+#define XLAL_ERROR_CUDA      _XLAL_ERROR_CUDA
+#define XLALPrintError_CUDA  _XLALPrintError
+#else
+#define XLAL_CHECK_CUDA      XLAL_CHECK
+#define XLAL_CHECK_CUDA_VOID XLAL_CHECK_VOID
+#define XLAL_ERROR_CUDA      XLAL_ERROR
+#define XLALPrintError_CUDA  XLALPrintError
 #endif
 
 LALSIMULATION_CUDA_HOST_DEVICE int PhenomPCoreOneFrequency(
