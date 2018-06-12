@@ -2,7 +2,7 @@
 
 EXTRA_DIST = header-link-stamp
 BUILT_SOURCES = header-link-stamp
-DISTCLEANFILES = header-link-stamp *.h *.i
+DISTCLEANFILES = header-link-stamp *.h *.hh *.i
 
 header-link-stamp: force-header-link-generation
 	$(AM_V_at)for file in $(DISTCLEANFILES); do \
