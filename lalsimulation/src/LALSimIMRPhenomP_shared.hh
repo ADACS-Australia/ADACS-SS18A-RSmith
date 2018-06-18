@@ -65,6 +65,7 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
 #include <cuda_runtime.h>
 __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
         REAL8 *freqs,
+        UINT4 stream_offset,
         UINT4 offset,
         const REAL8 eta,
         const REAL8 chi1_l,
@@ -182,7 +183,6 @@ class lalsimulation_exception_base : public std::exception {
             //    ABORT(EXIT_FAILURE);
             //else
             //    ABORT(EXIT_SUCCESS);
-            char msg[256];
             fprintf(stderr,"%s, reported from %s() [%s:%d]\n",this->what(),this->func(),this->file(),this->line());
             exit(1);
             //XLAL_ERROR_CUDA(XLAL_EFAILED,msg);
@@ -203,6 +203,9 @@ class lalsimulation_cuda_exception : public lalsimulation_exception_base {
             FREE,
             MEMCPY,
             SYNC,
+            STREAM_CREATE,
+            STREAM_SYNC,
+            STREAM_DESTROY,
             KERNEL_PHENOMPCOREONEFREQUENCY
             };
     private:
@@ -225,6 +228,12 @@ class lalsimulation_cuda_exception : public lalsimulation_exception_base {
                 return("CUDA error while calling cudaMemcpy()");
             case SYNC:
                 return("CUDA error while syncing device");
+            case STREAM_CREATE:
+                return("CUDA error while creating device stream");
+            case STREAM_SYNC:
+                return("CUDA error while syncing device stream");
+            case STREAM_DESTROY:
+                return("CUDA error while freeing device stream");
             // The following kernel error messages are meant to have
             //   modifiers placed in front of them to descriminate
             //   between CUDA errors and thread-sync errors.
