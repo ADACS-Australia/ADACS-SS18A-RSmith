@@ -82,10 +82,10 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
     COMPLEX16 *hptilde_pinned=NULL;
     COMPLEX16 *hctilde_pinned=NULL;
     REAL8     *phis_pinned   =NULL;
-    throw_on_cuda_error(cudaHostAlloc(&freqs_pinned,  L_fCut*sizeof(REAL8),    cudaHostAllocWriteCombined),lalsimulation_cuda_exception::MALLOC);
-    throw_on_cuda_error(cudaHostAlloc(&hctilde_pinned,L_fCut*sizeof(COMPLEX16),cudaHostAllocDefault),      lalsimulation_cuda_exception::MALLOC);
-    throw_on_cuda_error(cudaHostAlloc(&hptilde_pinned,L_fCut*sizeof(COMPLEX16),cudaHostAllocDefault),      lalsimulation_cuda_exception::MALLOC);
-    throw_on_cuda_error(cudaHostAlloc(&phis_pinned,   L_fCut*sizeof(REAL8),    cudaHostAllocDefault),      lalsimulation_cuda_exception::MALLOC);
+    throw_on_cuda_error(cudaHostAlloc(&freqs_pinned,  L_fCut*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+    throw_on_cuda_error(cudaHostAlloc(&hctilde_pinned,L_fCut*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+    throw_on_cuda_error(cudaHostAlloc(&hptilde_pinned,L_fCut*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+    throw_on_cuda_error(cudaHostAlloc(&phis_pinned,   L_fCut*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
 
     // Initialize inputs
     REAL8 *freqs=NULL;
@@ -153,7 +153,9 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
       throw_on_cuda_error(cudaMalloc(&phis,L_fCut*sizeof(REAL8)),lalsimulation_cuda_exception::MALLOC);
 
     // Perform the GPU work in chunks using asynchronous streams
-    UINT4  n_streams       = 16;
+    UINT4  n_streams       = 8;
+    if(n_streams>L_fCut)
+        n_streams=L_fCut;
     UINT4  i_stream        = 0;
     UINT4  stream_offset_i = 0;
     UINT4  stream_size_i   = L_fCut/n_streams;
@@ -165,6 +167,8 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         throw_on_cuda_error(cudaStreamCreate(&(stream[i_stream])),lalsimulation_cuda_exception::STREAM_CREATE);
         if(i_stream==(n_streams-1))
             stream_size_i=L_fCut-stream_offset_i;
+        else
+            stream_size_i=(L_fCut-stream_offset_i)/(n_streams-i_stream);
         stream_size[i_stream]  =stream_size_i;
         stream_offset[i_stream]=stream_offset_i;
 
@@ -173,7 +177,7 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         throw_on_cuda_error(cudaMemcpyAsync(&(freqs[stream_offset_i]),&(freqs_pinned[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyHostToDevice,stream[i_stream]),lalsimulation_cuda_exception::MEMCPY);
  
         // Run kernel
-        int n_threads=256;
+        int n_threads=32;
         int grid_size=(stream_size_i+(n_threads-1))/n_threads;
         throw_on_kernel_error((PhenomPCoreOneFrequency_cuda<<<grid_size,n_threads,0,stream[i_stream]>>>(
               L_fCut,
@@ -326,7 +330,6 @@ __global__ void PhenomPCoreOneFrequency_cuda(
         COMPLEX16 *hptilde,
         COMPLEX16 *hctilde,
         REAL8 *phis){
-
     UINT4 i = (UINT4)(blockIdx.x*blockDim.x + threadIdx.x + stream_offset);
     if(i < L_fCut){
 
@@ -335,16 +338,16 @@ __global__ void PhenomPCoreOneFrequency_cuda(
       REAL8     phasing;
       REAL8     f = freqs[i];
       UINT4     j = i + offset; // shift index for frequency series if needed
-
+  
       // Generate the waveform
       int per_thread_errcode = PhenomPCoreOneFrequency(f, eta, chi1_l, chi2_l, chip, distance, M, phic,
                                                        pAmp, pPhi, PCparams, pn, angcoeffs, Y2m,
                                                        alphaNNLOoffset - alpha0, epsilonNNLOoffset,
                                                        &hp_val, &hc_val, &phasing, IMRPhenomP_version, amp_prefactors, phi_prefactors);
-
+  
       // Throw execption if necessary
       if (per_thread_errcode != XLAL_SUCCESS)
-        cause_cuda_error(101010101); 
+        cause_cuda_error(101010101);
 
       hptilde[j] = hp_val;
       hctilde[j] = hc_val;
