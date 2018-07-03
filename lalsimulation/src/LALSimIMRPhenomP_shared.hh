@@ -11,9 +11,9 @@ extern "C" {
 #include <lal/LALSimIMR.h>
 #include <lal/LALConstants.h>
 
-#include "LALSimIMRPhenomP.h"
-#include "LALSimIMRPhenomC_internals.h"
-#include "LALSimIMRPhenomD_internals.h"
+#include <lal/LALSimIMRPhenomP.h>
+#include <lal/LALSimIMRPhenomC_internals.h>
+#include <lal/LALSimIMRPhenomD_internals.h>
 
 #include <lal/FrequencySeries.h>
 #include <lal/LALSimInspiral.h>
@@ -30,6 +30,38 @@ extern "C" {
 #endif
 #define LALSIMULATION_CUDA_HOST_DEVICE LALSIMULATION_CUDA_HOST LALSIMULATION_CUDA_DEVICE
 #define LALSIMULATION_CUDA_DEVICE_HOST LALSIMULATION_CUDA_HOST_DEVICE
+
+#if !defined(LALSIMULATION_CUDA_ENABLED)
+void *XLALPhenomPCore_buffer_alloc(UINT4 L_fCut);
+void XLALPhenomPCore_buffer_free(void *buf);
+#else
+#include <cuda_runtime.h>
+typedef struct tagPhenomPCore_buffer{
+   bool       init;
+   REAL8     *freqs;
+   COMPLEX16 *hptilde;
+   COMPLEX16 *hctilde;
+   REAL8     *phis;
+   REAL8     *freqs_pinned;
+   COMPLEX16 *hctilde_pinned;
+   COMPLEX16 *hptilde_pinned;
+   REAL8     *phis_pinned;
+   IMRPhenomDAmplitudeCoefficients  *pAmp;
+   IMRPhenomDPhaseCoefficients      *pPhi;
+   BBHPhenomCParams                 *PCparams;
+   PNPhasingSeries                  *pn;
+   NNLOanglecoeffs                  *angcoeffs;
+   SpinWeightedSphericalHarmonic_l2 *Y2m;
+   AmpInsPrefactors                 *amp_prefactors;
+   PhiInsPrefactors                 *phi_prefactors;
+   UINT4         n_streams;
+   cudaStream_t *stream;
+   UINT4        *stream_size;
+   UINT4        *stream_offset;
+} PhenomPCore_buffer;
+LALSIMULATION_CUDA_HOST PhenomPCore_buffer *XLALPhenomPCore_buffer_alloc(UINT4 L_fCut);
+LALSIMULATION_CUDA_HOST void XLALPhenomPCore_buffer_free(PhenomPCore_buffer *buf);
+#endif
 
 #if defined(LALSIMULATION_CUDA_ENABLED)
 void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
@@ -57,6 +89,7 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         COMPLEX16FrequencySeries *hptilde_host,
         COMPLEX16FrequencySeries *hctilde_host,
         REAL8 *phis_host,
+        const void  *buf,
         int   *errcode);
 #endif
 
@@ -66,7 +99,6 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
 __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
         REAL8 *freqs,
         UINT4 stream_offset,
-        UINT4 offset,
         const REAL8 eta,
         const REAL8 chi1_l,
         const REAL8 chi2_l,

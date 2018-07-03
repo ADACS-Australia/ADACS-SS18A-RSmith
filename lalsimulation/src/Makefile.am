@@ -124,7 +124,12 @@ pkginclude_HEADERS = \
 	LALSimulationConfig.h \
 	LALSimulationVCSInfo.h \
 	LALSimulationVCSInfoHeader.h \
-	LALSimUniversalRelations.h
+	LALSimUniversalRelations.h \
+	LALSimIMRPhenomC_internals.h \
+	LALSimIMRPhenomD_internals.h \
+	LALSimIMRPhenomD.h \
+	LALSimIMRPhenomP.h \
+	LALSimIMRPhenomP_shared.hh
 
 noinst_HEADERS = \
 	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
@@ -148,10 +153,6 @@ noinst_HEADERS = \
 	LALSimIMREOBNRv2.h \
 	LALSimIMREOBNRv2HMROMUtilities.c \
 	LALSimIMREOBNewtonianMultipole.c \
-	LALSimIMRPhenomC_internals.h \
-	LALSimIMRPhenomD.h \
-	LALSimIMRPhenomD_internals.h \
-	LALSimIMRPhenomP.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
@@ -181,8 +182,7 @@ noinst_HEADERS = \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
 	LALSimIMRSpinEOBHamiltonian.h \
-	LALSimNRTunedTides.h \
-	LALSimIMRPhenomP_shared.hh 
+	LALSimNRTunedTides.h 
 
 lib_LTLIBRARIES = liblalsimulation.la
 

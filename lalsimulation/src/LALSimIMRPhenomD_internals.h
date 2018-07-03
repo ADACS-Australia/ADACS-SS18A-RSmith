@@ -103,7 +103,7 @@ of this waveform.
 #include <lal/Units.h>
 #include <lal/LALSimInspiral.h>
 
-#include "LALSimIMRPhenomD.h"
+#include <lal/LALSimIMRPhenomD.h>
 
 // NOTE: At the moment we have separate functions for each Phenom coefficient;
 // these could be collected together
@@ -220,10 +220,6 @@ typedef struct tagdeltaUtility {
 
 double chiPN(double eta, double chi1, double chi2);
 size_t NextPow2(const size_t n);
-
-//inline double pow_2_of(double number);
-//inline double pow_3_of(double number);
-//inline double pow_4_of(double number);
 
 double Subtract3PNSS(double m1, double m2, double M, double chi1, double chi2);
 

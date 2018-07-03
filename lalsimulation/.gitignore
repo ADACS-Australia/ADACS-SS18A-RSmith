@@ -26,6 +26,7 @@ doxygen/in/
 doxygen/out/
 doxygen/test_doxygen.*
 include/lal/*.h
+include/lal/*.hh
 include/lal/*.i
 include/lal/header-link-stamp
 lalsimulation-*.tar.xz

@@ -64,7 +64,7 @@ swiglal_config.h: $(CONFIG_HEADER)
 	$(SED) -n -e 's/^#define  */#define SWIGLAL_/p' $< >>$@
 
 swiglal_header_list.txt: force-swig-rule-execution
-	$(AM_V_at)headers=`find $(top_builddir)/include/lal -name '*.h' ! -name '*VCSInfoHeader.h'`; \
+	$(AM_V_at)headers=`find $(top_builddir)/include/lal -name '*.h' -o -name '*.hh' ! -name '*VCSInfoHeader.h' ! -name '*cuda_complex.hh'`; \
 	headers=`printf '%s\n' $${headers} | $(SED) -e 's|^.*/\([^/]*\)$$|\1|' | LC_ALL=C sort`; \
 	printf "%s\n" $${headers} >$@.tmp; \
 	if test -f $@ && diff -s $@ $@.tmp >/dev/null 2>&1; then \

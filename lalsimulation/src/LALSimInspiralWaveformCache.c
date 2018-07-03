@@ -1079,7 +1079,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
               chi1_l, chi2_l, chip, thetaJN,
-              m1, m2, distance, alpha0, phi_aligned, f_ref, IMRPhenomPv1_V, NULL);
+              m1, m2, distance, alpha0, phi_aligned, f_ref, IMRPhenomPv1_V, NULL, NULL);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             for (UINT4 idx=0;idx<(*hptilde)->data->length;idx++) {
                 PhPpolp=(*hptilde)->data->data[idx];
@@ -1109,7 +1109,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
             /* Call the waveform driver routine */
             ret = XLALSimIMRPhenomPFrequencySequence(hptilde, hctilde, frequencies,
               chi1_l, chi2_l, chip, thetaJN,
-              m1, m2, distance, alpha0, phi_aligned, f_ref, IMRPhenomPv2_V, NULL);
+              m1, m2, distance, alpha0, phi_aligned, f_ref, IMRPhenomPv2_V, NULL, NULL);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             for (UINT4 idx=0;idx<(*hptilde)->data->length;idx++) {
                 PhPpolp=(*hptilde)->data->data[idx];

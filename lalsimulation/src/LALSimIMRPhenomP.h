@@ -20,12 +20,13 @@
  *  MA  02111-1307  USA
  */
 
+#include <lal/LALSimulationConfig.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALSimIMR.h>
 #include <lal/LALConstants.h>
 
-#include "LALSimIMRPhenomC_internals.h"
-#include "LALSimIMRPhenomD_internals.h"
+#include <lal/LALSimIMRPhenomC_internals.h>
+#include <lal/LALSimIMRPhenomD_internals.h>
 
 #include <lal/FrequencySeries.h>
 #include <lal/LALSimInspiral.h>
@@ -97,6 +98,7 @@ int PhenomPCore(
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
+  const void *buf,                            /**< A pointer for passing preallocated buffers; useful for GPU runs (set to NULL otherwise) */
   LALDict *extraParams /**< linked list containing the extra testing GR parameters */
 );
 
@@ -140,7 +142,6 @@ REAL8 FinalSpinBarausse2009(  /* Barausse & Rezzolla, Astrophys.J.Lett.704:L40-L
 }
 #endif
 
-#include "config.h"
 #if !defined(LALSIMULATION_CUDA_ENABLED)
 void PhenomPCoreAllFrequencies_cpu(UINT4 L_fCut,
         REAL8Sequence *freqs,
@@ -167,6 +168,7 @@ void PhenomPCoreAllFrequencies_cpu(UINT4 L_fCut,
         COMPLEX16FrequencySeries *hptilde,
         COMPLEX16FrequencySeries *hctilde,
         REAL8 *phis,
+        const void *buf,
         int   *errcode);
 #endif
 
