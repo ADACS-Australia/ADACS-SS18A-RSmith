@@ -474,8 +474,8 @@ int XLALSimIMRPhenomP(
   const REAL8 f_max,                          /**< End frequency; 0 defaults to ringdown cutoff freq */
   const REAL8 f_ref,                          /**< Reference frequency */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
-  const void *buf,                            /**< A pointer for passing preallocated buffers; useful for GPU runs (set to NULL otherwise) */
-  LALDict *extraParams)                       /**< Linked list containing the extra testing GR parameters */
+  LALDict *extraParams,                       /**< Linked list containing the extra testing GR parameters */
+  const void *buf)                            /**< A pointer for passing preallocated buffers; useful for GPU runs (set to NULL otherwise) */
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame
@@ -493,7 +493,7 @@ int XLALSimIMRPhenomP(
   freqs->data[1] = f_max;
 
   int retcode = PhenomPCore(hptilde, hctilde,
-      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version, buf, extraParams);
+      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, deltaF, IMRPhenomP_version, extraParams, buf);
   XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
   XLALDestroyREAL8Sequence(freqs);
   return (retcode);
@@ -529,8 +529,8 @@ int XLALSimIMRPhenomPFrequencySequence(
   const REAL8 phic,                           /**< Orbital phase at the peak of the underlying non precessing model (rad) */
   const REAL8 f_ref,                          /**< Reference frequency */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
-  const void *buf,                            /**< A pointer for passing preallocated buffers; useful for GPU runs (set to NULL otherwise) */
-  LALDict *extraParams) /**<linked list containing the extra testing GR parameters */
+  LALDict *extraParams,                       /**< linked list containing the extra testing GR parameters */
+  const void *buf)                            /**< A pointer for passing preallocated buffers; useful for GPU runs (set to NULL otherwise) */
 {
   // See Fig. 1. in arxiv:1408.1810 for diagram of the angles.
   // Note that the angles phiJ which is calculated internally in XLALSimIMRPhenomPCalculateModelParametersFromSourceFrame
@@ -539,7 +539,7 @@ int XLALSimIMRPhenomPFrequencySequence(
   // Call the internal core function with deltaF = 0 to indicate that freqs is non-uniformly
   // spaced and we want the strain only at these frequencies
   int retcode = PhenomPCore(hptilde, hctilde,
-      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version, buf, extraParams);
+      chi1_l, chi2_l, chip, thetaJ, m1_SI, m2_SI, distance, alpha0, phic, f_ref, freqs, 0, IMRPhenomP_version, extraParams, buf);
   XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to generate IMRPhenomP waveform.");
   return(retcode);
 }
@@ -573,9 +573,9 @@ int PhenomPCore(
    * If deltaF > 0, the frequency points given in freqs are uniformly spaced with
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
-  IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
-  const void *buf,                            /**< A pointer for passing preallocated buffers; useful for GPU runs (set to NULL otherwise) */
-  LALDict *extraParams /**<linked list containing the extra testing GR parameters */
+  IMRPhenomP_version_type IMRPhenomP_version,/**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
+  LALDict *extraParams,                      /**<linked list containing the extra testing GR parameters */
+  const void *buf                            /**< A pointer for passing preallocated buffers; useful for GPU runs (set to NULL otherwise) */
   )
 {
   /* Check inputs for sanity */

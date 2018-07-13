@@ -98,8 +98,8 @@ int PhenomPCore(
    * spacing deltaF. Otherwise, the frequency points are spaced non-uniformly.
    * Then we will use deltaF = 0 to create the frequency series we return. */
   IMRPhenomP_version_type IMRPhenomP_version, /**< IMRPhenomPv1 uses IMRPhenomC, IMRPhenomPv2 uses IMRPhenomD */
-  const void *buf,                            /**< A pointer for passing preallocated buffers; useful for GPU runs (set to NULL otherwise) */
-  LALDict *extraParams /**< linked list containing the extra testing GR parameters */
+  LALDict *extraParams,                 /**< linked list containing the extra testing GR parameters */
+  const void *buf                       /**< A pointer for passing preallocated buffers; useful for GPU runs (set to NULL otherwise) */
 );
 
 /* ************************** PhenomP internal function prototypes *****************************/

@@ -32,11 +32,11 @@ extern "C" {
 #define LALSIMULATION_CUDA_DEVICE_HOST LALSIMULATION_CUDA_HOST_DEVICE
 
 #if !defined(LALSIMULATION_CUDA_ENABLED)
-void *XLALPhenomPCore_buffer_alloc(UINT4 L_fCut);
-void XLALPhenomPCore_buffer_free(void *buf);
+void *XLALPhenomPCore_buffer(UINT4 L_fCut_max);
+void XLALfree_PhenomPCore_buffer(void *buf);
 #else
 #include <cuda_runtime.h>
-typedef struct tagPhenomPCore_buffer{
+typedef struct tagPhenomPCore_buffer_info{
    bool       init;
    REAL8     *freqs;
    COMPLEX16 *hptilde;
@@ -55,12 +55,13 @@ typedef struct tagPhenomPCore_buffer{
    AmpInsPrefactors                 *amp_prefactors;
    PhiInsPrefactors                 *phi_prefactors;
    UINT4         n_streams;
+   UINT4         n_streams_alloc;
    cudaStream_t *stream;
    UINT4        *stream_size;
    UINT4        *stream_offset;
-} PhenomPCore_buffer;
-LALSIMULATION_CUDA_HOST PhenomPCore_buffer *XLALPhenomPCore_buffer_alloc(UINT4 L_fCut);
-LALSIMULATION_CUDA_HOST void XLALPhenomPCore_buffer_free(PhenomPCore_buffer *buf);
+} PhenomPCore_buffer_info;
+LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(UINT4 L_fCut_max);
+LALSIMULATION_CUDA_HOST void XLALfree_PhenomPCore_buffer(PhenomPCore_buffer_info *buf);
 #endif
 
 #if defined(LALSIMULATION_CUDA_ENABLED)
