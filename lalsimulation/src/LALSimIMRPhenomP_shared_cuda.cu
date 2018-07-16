@@ -330,13 +330,33 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         UINT4        stream_offset_i = stream_offset[i_stream];
         UINT4        stream_size_i   = stream_size[i_stream];
         cudaStream_t stream_i        = stream[i_stream];
-     
+///**/
+//    n_streams       = 8;
+//    if(n_streams>L_fCut)
+//        n_streams=L_fCut;
+//    UINT4  i_stream        = 0;
+//    UINT4  stream_offset_i = 0;
+//    UINT4  stream_size_i   = L_fCut/n_streams;
+//    stream_size     = (UINT4 *)malloc(n_streams*sizeof(UINT4));
+//    stream_offset   = (UINT4 *)malloc(n_streams*sizeof(UINT4));
+//    stream = (cudaStream_t *)malloc(n_streams*sizeof(cudaStream_t));
+//    for(i_stream=0;i_stream<n_streams;i_stream++,stream_offset_i+=stream_size_i){
+//        // Create and initialize stream
+//        throw_on_cuda_error(cudaStreamCreate(&(stream[i_stream])),lalsimulation_cuda_exception::STREAM_CREATE);
+//        if(i_stream==(n_streams-1))
+//            stream_size_i=L_fCut-stream_offset_i;
+//        else
+//            stream_size_i=(L_fCut-stream_offset_i)/(n_streams-i_stream);
+//        stream_size[i_stream]  =stream_size_i;
+//        stream_offset[i_stream]=stream_offset_i;    
+//        cudaStream_t stream_i = stream[i_stream];
+///**/    
         // Perform host->device transfer
         throw_on_cuda_error(cudaMemcpyAsync(&(freqs_pinned[stream_offset_i]),&(freqs_host->data[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyHostToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
         throw_on_cuda_error(cudaMemcpyAsync(&(freqs[stream_offset_i]),&(freqs_pinned[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyHostToDevice,stream_i),lalsimulation_cuda_exception::MEMCPY);
 
         // Run kernel
-        int n_threads=32;
+        int n_threads=16; // Appropriate for 72-register kernel on a P100
         int grid_size=(stream_size_i+(n_threads-1))/n_threads;
         throw_on_kernel_error((PhenomPCoreOneFrequency_cuda<<<grid_size,n_threads,0,stream_i>>>(
               L_fCut,
@@ -367,16 +387,20 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
 
         // Perform device->host transfer
         throw_on_cuda_error(cudaMemcpyAsync(&(hptilde_pinned[stream_offset_i]),&(hptilde[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
-        throw_on_cuda_error(cudaMemcpyAsync(&(hptilde_host->data->data[stream_offset_i]),&(hptilde_pinned[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyHostToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
         throw_on_cuda_error(cudaMemcpyAsync(&(hctilde_pinned[stream_offset_i]),&(hctilde[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
-        throw_on_cuda_error(cudaMemcpyAsync(&(hctilde_host->data->data[stream_offset_i]),&(hctilde_pinned[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyHostToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
         throw_on_cuda_error(cudaMemcpyAsync(&(phis_pinned[stream_offset_i]),&(phis[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);        
-        throw_on_cuda_error(cudaMemcpyAsync(&(phis_host[stream_offset_i]),&(phis_pinned[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyHostToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
     }
 
     // Synchronize streams, copy results out of pinned cache
-    for(i_stream=0;i_stream<n_streams;i_stream++)
+    for(i_stream=0;i_stream<n_streams;i_stream++){
+        UINT4        stream_offset_i = stream_offset[i_stream];
+        UINT4        stream_size_i   = stream_size[i_stream];
+        cudaStream_t stream_i        = stream[i_stream];
         throw_on_cuda_error(cudaStreamSynchronize(stream[i_stream]),lalsimulation_cuda_exception::STREAM_SYNC);
+        throw_on_cuda_error(cudaMemcpyAsync(&(hptilde_host->data->data[stream_offset_i]),&(hptilde_pinned[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyHostToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
+        throw_on_cuda_error(cudaMemcpyAsync(&(hctilde_host->data->data[stream_offset_i]),&(hctilde_pinned[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyHostToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
+        throw_on_cuda_error(cudaMemcpyAsync(&(phis_host[stream_offset_i]),&(phis_pinned[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyHostToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
+    }
 
     // Shift index for frequency series if needed.  This wouldn't work in the
     // kernel due to async implementation, so it needs to be done here.
