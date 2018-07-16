@@ -169,7 +169,7 @@
  * time domain and conditioned so that it is suitable for injection
  * into detector data.
  */
-#define _MAIN
+
 #include <complex.h>
 #include <math.h>
 #include <stdio.h>
@@ -192,8 +192,6 @@
 #include <lal/LALDict.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
-
-#include "LALSimIMRPhenomD.h"
 
 /* default values of parameters */
 #define DEFAULT_APPROX "TaylorT1"

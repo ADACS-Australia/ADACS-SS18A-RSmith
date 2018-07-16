@@ -28,7 +28,6 @@
  */
 
 #include <stdio.h>
-#include <assert.h>
 #include <cufft.h>
 #include <lal/LALAtomicDatatypes.h>
 
@@ -59,17 +58,16 @@ chisqKernel( REAL4* g_chisq, COMPLEX8* g_q, COMPLEX8 *g_data,
   for (unsigned l=0; l < numChisqBins; l++)
     {
       unsigned j= blockIdx.x * blockDim.x + threadIdx.x;
-      assert(0); // The following code is commented out because of a compiler error conflict
-/*
-      REAL4 Xl = crealf(g_data[l*numPoints + j]);
-      REAL4 Yl = cimagf(g_data[l*numPoints + j]);
+
+      REAL4 Xl = g_data[l*numPoints + j].real();
+      REAL4 Yl = g_data[l*numPoints + j].imag();
       
       REAL4 deltaXl = chisqNorm * Xl -
-	(chisqNorm * crealf(g_q[j]) / (REAL4) (numChisqBins));
+	(chisqNorm * g_q[j].real() / (REAL4) (numChisqBins));
       REAL4 deltaYl = chisqNorm * Yl -
-	(chisqNorm * cimagf(g_q[j]) / (REAL4) (numChisqBins));
+	(chisqNorm * g_q[j].imag() / (REAL4) (numChisqBins));
+
       g_chisq[j] += deltaXl * deltaXl + deltaYl * deltaYl;
-*/
     }
 }
 
