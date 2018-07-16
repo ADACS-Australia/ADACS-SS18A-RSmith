@@ -381,8 +381,8 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
     // Shift index for frequency series if needed.  This wouldn't work in the
     // kernel due to async implementation, so it needs to be done here.
     if(offset!=0){
-        UINT4 j=L_fCut-1;
-        UINT4 i=j-offset;
+        INT4 j=L_fCut-1;
+        INT4 i=j-offset;
         for(;i>=0;i--,j--){
             hptilde_host[j]=hptilde_host[i];
             hctilde_host[j]=hctilde_host[i];
@@ -463,15 +463,18 @@ __host__ void _check_thread_sync(int implementation_code,const std::string file,
       e.process_exception();
   }
 }
+// This is here for any future MPI implementations, if needed
 __host__ void _throw_on_global_error(const std::string file, const std::string func, int line)
 {
-  int error_code=0;
+  (void)line; // to avoid a compiler warning
+  //int error_code=0;
   //MPI_Allreduce(MPI_IN_PLACE,&error_code,1,MPI_INT,MPI_MAX,run_globals.mpi_comm);
   //if(error_code!=0) throw(meraxes_cuda_exception(0,meraxes_cuda_exception::GLOBAL,file,func,line));
 }
 __host__ void notify_of_global_error(int error_code)
 {
-  int result=(int)error_code;
+  (void)error_code; // to avoid a compiler warning
+  //int result=(int)error_code;
   //MPI_Allreduce(MPI_IN_PLACE,&result,1,MPI_INT,MPI_MAX,run_globals.mpi_comm);
 }
 
@@ -671,9 +674,6 @@ LALSIMULATION_CUDA_HOST_DEVICE int PhenomPCoreOneFrequency(
       phPhenom = IMRPhenDPhase(f, pPhi, PNparams, &powers_of_f, phi_prefactors);
       SL = chi1_l*m1*m1 + chi2_l*m2*m2;        /* Dimensionfull aligned spin. */
       break;
-    default:
-      XLAL_ERROR_CUDA( XLAL_EINVAL, "Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
-      break;
   }
 
   const COMPLEX16 MY_I = complex<double>(0,1);
@@ -708,9 +708,6 @@ LALSIMULATION_CUDA_HOST_DEVICE int PhenomPCoreOneFrequency(
     case IMRPhenomPv2_V:
       WignerdCoefficients(&cBetah, &sBetah, omega_cbrt, SL, eta, Sperp);
       break;
-  default:
-    XLAL_ERROR_CUDA( XLAL_EINVAL, " Unknown IMRPhenomP version!\nAt present only v1 and v2 are available." );
-    break;
   }
 
   const REAL8 cBetah2 = cBetah*cBetah;
