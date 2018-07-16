@@ -182,7 +182,7 @@ noinst_HEADERS = \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
 	LALSimIMRSpinEOBHamiltonian.h \
-	LALSimNRTunedTides.h 
+	LALSimNRTunedTides.h
 
 lib_LTLIBRARIES = liblalsimulation.la
 
