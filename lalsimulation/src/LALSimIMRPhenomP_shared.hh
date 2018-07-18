@@ -54,6 +54,7 @@ typedef struct tagPhenomPCore_buffer_info{
    SpinWeightedSphericalHarmonic_l2 *Y2m;
    AmpInsPrefactors                 *amp_prefactors;
    PhiInsPrefactors                 *phi_prefactors;
+   UINT4         L_fCut_alloc;
    UINT4         n_streams;
    UINT4         n_streams_alloc;
    cudaStream_t *stream;
@@ -99,7 +100,7 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
 #include <cuda_runtime.h>
 __global__ void PhenomPCoreOneFrequency_cuda(UINT4 L_fCut,
         REAL8 *freqs,
-        UINT4 stream_offset,
+        const UINT4 stream_offset,
         const REAL8 eta,
         const REAL8 chi1_l,
         const REAL8 chi2_l,
