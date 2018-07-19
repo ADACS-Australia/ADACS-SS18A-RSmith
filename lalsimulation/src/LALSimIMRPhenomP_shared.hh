@@ -32,7 +32,7 @@ extern "C" {
 #define LALSIMULATION_CUDA_DEVICE_HOST LALSIMULATION_CUDA_HOST_DEVICE
 
 #if !defined(LALSIMULATION_CUDA_ENABLED)
-void *XLALPhenomPCore_buffer(UINT4 L_fCut_max);
+void *XLALPhenomPCore_buffer(const UINT4 L_fCut_max,const INT4 n_streams);
 void XLALfree_PhenomPCore_buffer(void *buf);
 #else
 #include <cuda_runtime.h>
@@ -61,7 +61,7 @@ typedef struct tagPhenomPCore_buffer_info{
    UINT4        *stream_size;
    UINT4        *stream_offset;
 } PhenomPCore_buffer_info;
-LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(UINT4 L_fCut_max);
+LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(const UINT4 L_fCut_max,const INT4 n_streams);
 LALSIMULATION_CUDA_HOST void XLALfree_PhenomPCore_buffer(PhenomPCore_buffer_info *buf);
 #endif
 

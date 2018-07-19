@@ -45,53 +45,65 @@
 
 #if defined(LALSIMULATION_CUDA_ENABLED)
 
-#define N_LALSIM_CUDA_STREAMS_MAX 8
+#define N_LALSIM_CUDA_STREAMS_DEFAULT 0
 
 static void set_streams(UINT4 L_fCut, UINT4 n_streams_alloc, UINT4 *n_streams, UINT4 *stream_size, UINT4 *stream_offset){
+
     // Make sure that every stream has some work
     (*n_streams) = n_streams_alloc; 
     if((*n_streams)>L_fCut)
         (*n_streams)=L_fCut;
 
+    if(*n_streams>0){
     // Compute the stream array offsets and sizes
-    UINT4  i_stream        = 0;
-    UINT4  stream_offset_i = 0;
-    UINT4  stream_size_i   = L_fCut/(*n_streams);
-    for(i_stream=0;i_stream<(*n_streams);i_stream++,stream_offset_i+=stream_size_i){
-        // Set stream size
-        if(i_stream==((*n_streams)-1))
-            stream_size_i=L_fCut-stream_offset_i;
-        else
-            stream_size_i=(L_fCut-stream_offset_i)/((*n_streams)-i_stream);
-        stream_size[i_stream]  =stream_size_i;
+        UINT4  i_stream        = 0;
+        UINT4  stream_offset_i = 0;
+        UINT4  stream_size_i   = L_fCut/(*n_streams);
+        for(i_stream=0;i_stream<(*n_streams);i_stream++,stream_offset_i+=stream_size_i){
+            // Set stream size
+            if(i_stream==((*n_streams)-1))
+                stream_size_i=L_fCut-stream_offset_i;
+            else
+                stream_size_i=(L_fCut-stream_offset_i)/((*n_streams)-i_stream);
+            stream_size[i_stream]  =stream_size_i;
 
-        // Set stream offset
-        stream_offset[i_stream]=stream_offset_i;
+            // Set stream offset
+            stream_offset[i_stream]=stream_offset_i;
+        }
     }
 }
 
 static void alloc_streams(UINT4 L_fCut_max, UINT4 n_streams_alloc, UINT4 *n_streams, cudaStream_t **stream, UINT4 **stream_size,UINT4 **stream_offset){
+    if(n_streams_alloc>0){
+        (*stream)        = (cudaStream_t *)malloc(n_streams_alloc*sizeof(cudaStream_t));
+        (*stream_size)   = (UINT4 *)malloc(n_streams_alloc*sizeof(UINT4));
+        (*stream_offset) = (UINT4 *)malloc(n_streams_alloc*sizeof(UINT4));
 
-    (*stream)        = (cudaStream_t *)malloc(n_streams_alloc*sizeof(cudaStream_t));
-    (*stream_size)   = (UINT4 *)malloc(n_streams_alloc*sizeof(UINT4));
-    (*stream_offset) = (UINT4 *)malloc(n_streams_alloc*sizeof(UINT4));
+        // Create the streams
+        UINT4  i_stream = 0;
+        for(i_stream=0;i_stream<n_streams_alloc;i_stream++)
+            throw_on_cuda_error(cudaStreamCreate(&((*stream)[i_stream])),lalsimulation_cuda_exception::STREAM_CREATE);
 
-    // Create the streams
-    UINT4  i_stream = 0;
-    for(i_stream=0;i_stream<n_streams_alloc;i_stream++)
-        throw_on_cuda_error(cudaStreamCreate(&((*stream)[i_stream])),lalsimulation_cuda_exception::STREAM_CREATE);
-
-    // Set the streams to the simplest initial state of L_fCut=L_fCut_max
-    set_streams(L_fCut_max, n_streams_alloc, n_streams, (*stream_size), (*stream_offset));
+        // Set the streams to the simplest initial state of L_fCut=L_fCut_max
+        set_streams(L_fCut_max, n_streams_alloc, n_streams, (*stream_size), (*stream_offset));
+    }
+    else{
+        (*n_streams)     = 0;
+        (*stream)        = NULL;
+        (*stream_size)   = NULL;
+        (*stream_offset) = NULL;
+    }
 }
 
 static void free_streams(UINT4 *n_streams_alloc,UINT4 *n_streams,cudaStream_t **stream, UINT4 **stream_size,UINT4 **stream_offset){
-    UINT4 i_stream = 0;
-    for(i_stream=0;i_stream<(*n_streams_alloc);i_stream++)
-       throw_on_cuda_error(cudaStreamDestroy((*stream)[i_stream]),lalsimulation_cuda_exception::STREAM_DESTROY);
-    free((*stream));
-    free((*stream_size));
-    free((*stream_offset));
+    if((*n_streams_alloc)>0){
+        UINT4 i_stream = 0;
+        for(i_stream=0;i_stream<(*n_streams_alloc);i_stream++)
+           throw_on_cuda_error(cudaStreamDestroy((*stream)[i_stream]),lalsimulation_cuda_exception::STREAM_DESTROY);
+        free((*stream));
+        free((*stream_size));
+        free((*stream_offset));
+    }
     (*n_streams)      =0;
     (*n_streams_alloc)=0;
     (*stream)         =NULL;
@@ -99,7 +111,16 @@ static void free_streams(UINT4 *n_streams_alloc,UINT4 *n_streams,cudaStream_t **
     (*stream_offset)  =NULL;
 }
 
-LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(UINT4 L_fCut_max){
+// If n_streams_alloc==0, then a synchronous calculation will be performed.  Otherwise, the calculation
+// will be conducted with n_streams_alloc asynchronous streams.
+LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(const UINT4 L_fCut_max, const INT4 n_streams_alloc_in){
+
+    // Set the number of streams that we will allocate.
+    UINT4 n_streams_alloc = N_LALSIM_CUDA_STREAMS_DEFAULT;
+    if(n_streams_alloc_in<0)
+        n_streams_alloc = N_LALSIM_CUDA_STREAMS_DEFAULT;
+    else
+        n_streams_alloc = n_streams_alloc_in;
 
     PhenomPCore_buffer_info *buf = (PhenomPCore_buffer_info *)malloc(sizeof(PhenomPCore_buffer_info));
     buf->init=true;
@@ -108,11 +129,17 @@ LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(UINT4 L_
     // Establish a device context
     throw_on_cuda_error(cudaFree(0),lalsimulation_cuda_exception::INIT);
 
+    // Initialize cuda streams
+    buf->n_streams_alloc = n_streams_alloc;
+    alloc_streams(L_fCut_max,buf->n_streams_alloc,&(buf->n_streams),&(buf->stream),&(buf->stream_size),&(buf->stream_offset));
+
     // Initialize pinned memory
-    throw_on_cuda_error(cudaHostAlloc(&(buf->freqs_pinned),  L_fCut_max*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
-    throw_on_cuda_error(cudaHostAlloc(&(buf->hctilde_pinned),L_fCut_max*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
-    throw_on_cuda_error(cudaHostAlloc(&(buf->hptilde_pinned),L_fCut_max*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
-    throw_on_cuda_error(cudaHostAlloc(&(buf->phis_pinned),   L_fCut_max*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+    if(buf->n_streams_alloc>0){
+        throw_on_cuda_error(cudaHostAlloc(&(buf->freqs_pinned),  L_fCut_max*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaHostAlloc(&(buf->hctilde_pinned),L_fCut_max*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaHostAlloc(&(buf->hptilde_pinned),L_fCut_max*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaHostAlloc(&(buf->phis_pinned),   L_fCut_max*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+    }
 
     // Initialize device memory for input/output arrays
     throw_on_cuda_error(cudaMalloc(&(buf->freqs),  L_fCut_max*sizeof(REAL8)),    lalsimulation_cuda_exception::MALLOC);
@@ -130,10 +157,6 @@ LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(UINT4 L_
     throw_on_cuda_error(cudaMalloc(&(buf->amp_prefactors),sizeof(AmpInsPrefactors)),lalsimulation_cuda_exception::MALLOC);
     throw_on_cuda_error(cudaMalloc(&(buf->phi_prefactors),sizeof(PhiInsPrefactors)),lalsimulation_cuda_exception::MALLOC);
 
-    // Initialize cuda streams
-    buf->n_streams_alloc = N_LALSIM_CUDA_STREAMS_MAX;
-    alloc_streams(L_fCut_max,buf->n_streams_alloc,&(buf->n_streams),&(buf->stream),&(buf->stream_size),&(buf->stream_offset));
-
     return(buf);
 }
 
@@ -144,10 +167,18 @@ LALSIMULATION_CUDA_HOST void XLALfree_PhenomPCore_buffer(PhenomPCore_buffer_info
             free_streams(&(buf->n_streams_alloc),&(buf->n_streams),&(buf->stream),&(buf->stream_size),&(buf->stream_offset));
 
             // Free inputs/outputs
-            throw_on_cuda_error(cudaFreeHost(buf->freqs_pinned),  lalsimulation_cuda_exception::FREE);
-            throw_on_cuda_error(cudaFreeHost(buf->hptilde_pinned),lalsimulation_cuda_exception::FREE);
-            throw_on_cuda_error(cudaFreeHost(buf->hctilde_pinned),lalsimulation_cuda_exception::FREE);
-            throw_on_cuda_error(cudaFreeHost(buf->phis_pinned),   lalsimulation_cuda_exception::FREE);
+            if(buf->n_streams_alloc>0){
+                throw_on_cuda_error(cudaFreeHost(buf->freqs_pinned),  lalsimulation_cuda_exception::FREE);
+                throw_on_cuda_error(cudaFreeHost(buf->hptilde_pinned),lalsimulation_cuda_exception::FREE);
+                throw_on_cuda_error(cudaFreeHost(buf->hctilde_pinned),lalsimulation_cuda_exception::FREE);
+                throw_on_cuda_error(cudaFreeHost(buf->phis_pinned),   lalsimulation_cuda_exception::FREE);
+            }
+            else{
+                buf->freqs_pinned  =NULL;
+                buf->hptilde_pinned=NULL;
+                buf->hctilde_pinned=NULL;
+                buf->phis_pinned   =NULL;
+            }
             throw_on_cuda_error(cudaFree(buf->phis),              lalsimulation_cuda_exception::FREE);
             throw_on_cuda_error(cudaFree(buf->hctilde),           lalsimulation_cuda_exception::FREE);
             throw_on_cuda_error(cudaFree(buf->hptilde),           lalsimulation_cuda_exception::FREE);
@@ -160,6 +191,18 @@ LALSIMULATION_CUDA_HOST void XLALfree_PhenomPCore_buffer(PhenomPCore_buffer_info
             throw_on_cuda_error(cudaFree(buf->pPhi),              lalsimulation_cuda_exception::FREE);
             throw_on_cuda_error(cudaFree(buf->pAmp),              lalsimulation_cuda_exception::FREE);
             throw_on_cuda_error(cudaFree(buf->freqs),             lalsimulation_cuda_exception::FREE);
+            buf->phis          =NULL;
+            buf->hctilde       =NULL;
+            buf->hptilde       =NULL;
+            buf->phi_prefactors=NULL;
+            buf->amp_prefactors=NULL;
+            buf->Y2m           =NULL;
+            buf->angcoeffs     =NULL;
+            buf->pn            =NULL;
+            buf->PCparams      =NULL;
+            buf->pPhi          =NULL;
+            buf->pAmp          =NULL;
+            buf->freqs         =NULL;
             buf->init=false;
         }
     }
@@ -199,48 +242,6 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
 
   try{
 
-    // We use pinned versions of the input & output arrays
-    // to enable asynchronous implementations
-    REAL8     *freqs_pinned  =NULL;
-    COMPLEX16 *hptilde_pinned=NULL;
-    COMPLEX16 *hctilde_pinned=NULL;
-    REAL8     *phis_pinned   =NULL;
-    REAL8     *freqs         =NULL;
-    COMPLEX16 *hptilde       =NULL;
-    COMPLEX16 *hctilde       =NULL;
-    REAL8     *phis          =NULL;
-    if(buf!=NULL){
-        // Check that the buffer is sufficiently allocated
-        if(buf->L_fCut_alloc<L_fCut){
-            printf("Error: buf->L_fCut_alloc<L_fCut (ie %d<%d).",buf->L_fCut_alloc,L_fCut);
-            exit(1);
-        }
-
-        // Fetch pointers from buffer
-        freqs_pinned  =buf->freqs_pinned;
-        hptilde_pinned=buf->hptilde_pinned;
-        hctilde_pinned=buf->hctilde_pinned;
-        phis_pinned   =buf->phis_pinned;
-        freqs         =buf->freqs;
-        hptilde       =buf->hptilde;
-        hctilde       =buf->hctilde;
-        phis          =buf->phis;
-    }
-    else{
-        // Establish a device context
-        throw_on_cuda_error(cudaFree(0),lalsimulation_cuda_exception::INIT);
-
-        // Allocate buffer arrays
-        throw_on_cuda_error(cudaHostAlloc(&freqs_pinned,  L_fCut*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
-        throw_on_cuda_error(cudaHostAlloc(&hctilde_pinned,L_fCut*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
-        throw_on_cuda_error(cudaHostAlloc(&hptilde_pinned,L_fCut*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
-        throw_on_cuda_error(cudaHostAlloc(&phis_pinned,   L_fCut*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
-        throw_on_cuda_error(cudaMalloc(&freqs,            L_fCut*sizeof(REAL8)),                         lalsimulation_cuda_exception::MALLOC);
-        throw_on_cuda_error(cudaMalloc(&hptilde,          L_fCut*sizeof(COMPLEX16)),                     lalsimulation_cuda_exception::MALLOC);
-        throw_on_cuda_error(cudaMalloc(&hctilde,          L_fCut*sizeof(COMPLEX16)),                     lalsimulation_cuda_exception::MALLOC);
-        throw_on_cuda_error(cudaMalloc(&phis,             L_fCut*sizeof(REAL8)),                         lalsimulation_cuda_exception::MALLOC);
-    }
-
     // Initialize streams
     cudaStream_t *stream=NULL;
     UINT4        *stream_size=NULL;
@@ -259,8 +260,54 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
        set_streams(L_fCut,n_streams_alloc,&n_streams,stream_size,stream_offset);
     }
     else{
-       n_streams_alloc = N_LALSIM_CUDA_STREAMS_MAX;
+       n_streams_alloc = N_LALSIM_CUDA_STREAMS_DEFAULT;
        alloc_streams(L_fCut,n_streams_alloc,&n_streams,&stream,&stream_size,&stream_offset);
+    }
+
+    // We use pinned versions of the input & output arrays
+    // to enable asynchronous implementations
+    REAL8     *freqs_pinned  =NULL;
+    COMPLEX16 *hptilde_pinned=NULL;
+    COMPLEX16 *hctilde_pinned=NULL;
+    REAL8     *phis_pinned   =NULL;
+    REAL8     *freqs         =NULL;
+    COMPLEX16 *hptilde       =NULL;
+    COMPLEX16 *hctilde       =NULL;
+    REAL8     *phis          =NULL;
+    if(buf!=NULL){
+        // Check that the buffer is sufficiently allocated
+        if(buf->L_fCut_alloc<L_fCut){
+            printf("Error: buf->L_fCut_alloc<L_fCut (ie %d<%d).",buf->L_fCut_alloc,L_fCut);
+            exit(1);
+        }
+
+        // Fetch pointers from buffer
+        if(n_streams>0){
+            freqs_pinned  =buf->freqs_pinned;
+            hptilde_pinned=buf->hptilde_pinned;
+            hctilde_pinned=buf->hctilde_pinned;
+            phis_pinned   =buf->phis_pinned;
+        }
+        freqs  =buf->freqs;
+        hptilde=buf->hptilde;
+        hctilde=buf->hctilde;
+        phis   =buf->phis;
+    }
+    else{
+        // Establish a device context
+        throw_on_cuda_error(cudaFree(0),lalsimulation_cuda_exception::INIT);
+
+        // Allocate buffer arrays
+        if(n_streams>0){
+            throw_on_cuda_error(cudaHostAlloc(&freqs_pinned,  L_fCut*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+            throw_on_cuda_error(cudaHostAlloc(&hctilde_pinned,L_fCut*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+            throw_on_cuda_error(cudaHostAlloc(&hptilde_pinned,L_fCut*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+            throw_on_cuda_error(cudaHostAlloc(&phis_pinned,   L_fCut*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+        }
+        throw_on_cuda_error(cudaMalloc(&freqs,  L_fCut*sizeof(REAL8)),    lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMalloc(&hptilde,L_fCut*sizeof(COMPLEX16)),lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMalloc(&hctilde,L_fCut*sizeof(COMPLEX16)),lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaMalloc(&phis,   L_fCut*sizeof(REAL8)),    lalsimulation_cuda_exception::MALLOC);
     }
 
     IMRPhenomDAmplitudeCoefficients *pAmp=NULL;
@@ -338,57 +385,108 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
     // Perform the GPU work in chunks using asynchronous streams
     UINT4 i_stream = 0;
     for(i_stream=0;i_stream<n_streams;i_stream++){
-        UINT4        stream_offset_i = stream_offset[i_stream];
-        UINT4        stream_size_i   = stream_size[i_stream];
-        cudaStream_t stream_i        = stream[i_stream];
+        // Set the number of threads per block.  Profiling
+        // has revealed that this kernel uses 72-registers.
+        // This number of threads is appropriate iin that
+        // case for a P100.
+        int n_threads=16;
 
-        // Perform host->device transfer
-        throw_on_cuda_error(cudaMemcpyAsync(&(freqs_pinned[stream_offset_i]),&(freqs_host->data[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyHostToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
-        throw_on_cuda_error(cudaMemcpyAsync(&(freqs[stream_offset_i]),&(freqs_pinned[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyHostToDevice,stream_i),lalsimulation_cuda_exception::MEMCPY);
+        // If we are using one-or-more stream(s), we need to
+        // work with the pinned arrays and the appropriate
+        // stream sizes and stream offsets
+        if(n_streams>1){
+            UINT4        stream_offset_i = stream_offset[i_stream];
+            UINT4        stream_size_i   = stream_size[i_stream];
+            cudaStream_t stream_i        = stream[i_stream];
 
-        // Run kernel
-        int n_threads=16; // Appropriate for 72-register kernel on a P100
-        int grid_size=(stream_size_i+(n_threads-1))/n_threads;
-        throw_on_kernel_error((PhenomPCoreOneFrequency_cuda<<<grid_size,n_threads,0,stream_i>>>(
-              L_fCut,
-              freqs,
-              stream_offset_i,
-              eta,
-              chi1_l,
-              chi2_l,
-              chip,
-              distance,
-              M,
-              phic,
-              pAmp,
-              pPhi,
-              PCparams,
-              pn,
-              angcoeffs,
-              Y2m,
-              alphaNNLOoffset,
-              alpha0,
-              epsilonNNLOoffset,
-              IMRPhenomP_version,
-              amp_prefactors,
-              phi_prefactors,
-              hptilde,
-              hctilde,
-              phis)),lalsimulation_cuda_exception::KERNEL_PHENOMPCOREONEFREQUENCY);
+            // Perform host->device transfer (via the pinned array)
+            throw_on_cuda_error(cudaMemcpyAsync(&(freqs_pinned[stream_offset_i]),&(freqs_host->data[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyHostToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
+            throw_on_cuda_error(cudaMemcpyAsync(&(freqs[stream_offset_i]),&(freqs_pinned[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyHostToDevice,stream_i),lalsimulation_cuda_exception::MEMCPY);
 
-        // Perform device->host transfer
-        throw_on_cuda_error(cudaMemcpyAsync(&(hptilde_pinned[stream_offset_i]),&(hptilde[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
-        throw_on_cuda_error(cudaMemcpyAsync(&(hctilde_pinned[stream_offset_i]),&(hctilde[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
-        throw_on_cuda_error(cudaMemcpyAsync(&(phis_pinned[stream_offset_i]),&(phis[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);        
+            // Run kernel
+            int grid_size=(stream_size_i+(n_threads-1))/n_threads;
+            throw_on_kernel_error((PhenomPCoreOneFrequency_cuda<<<grid_size,n_threads,0,stream_i>>>(
+                  L_fCut,
+                  freqs,
+                  stream_offset_i,
+                  eta,
+                  chi1_l,
+                  chi2_l,
+                  chip,
+                  distance,
+                  M,
+                  phic,
+                  pAmp,
+                  pPhi,
+                  PCparams,
+                  pn,
+                  angcoeffs,
+                  Y2m,
+                  alphaNNLOoffset,
+                  alpha0,
+                  epsilonNNLOoffset,
+                  IMRPhenomP_version,
+                  amp_prefactors,
+                  phi_prefactors,
+                  hptilde,
+                  hctilde,
+                  phis)),lalsimulation_cuda_exception::KERNEL_PHENOMPCOREONEFREQUENCY);
+
+            // Perform device->host transfer of results
+            throw_on_cuda_error(cudaMemcpyAsync(&(hptilde_pinned[stream_offset_i]),&(hptilde[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
+            throw_on_cuda_error(cudaMemcpyAsync(&(hctilde_pinned[stream_offset_i]),&(hctilde[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
+            throw_on_cuda_error(cudaMemcpyAsync(&(phis_pinned[stream_offset_i]),   &(phis[stream_offset_i]),   stream_size_i*sizeof(REAL8),    cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);        
+        }
+        // ... else, we can bypass the pinned arrays
+        else{
+            // Perform host->device transfer
+            throw_on_cuda_error(cudaMemcpy(freqs,freqs_host->data,L_fCut*sizeof(REAL8),cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
+
+            // Run kernel
+            int grid_size=(L_fCut+(n_threads-1))/n_threads;
+            throw_on_kernel_error((PhenomPCoreOneFrequency_cuda<<<grid_size,n_threads,0>>>(
+                  L_fCut,
+                  freqs,
+                  0,
+                  eta,
+                  chi1_l,
+                  chi2_l,
+                  chip,
+                  distance,
+                  M,
+                  phic,
+                  pAmp,
+                  pPhi,
+                  PCparams,
+                  pn,
+                  angcoeffs,
+                  Y2m,
+                  alphaNNLOoffset,
+                  alpha0,
+                  epsilonNNLOoffset,
+                  IMRPhenomP_version,
+                  amp_prefactors,
+                  phi_prefactors,
+                  hptilde,
+                  hctilde,
+                  phis)),lalsimulation_cuda_exception::KERNEL_PHENOMPCOREONEFREQUENCY);
+
+            // Perform device->host transfer of results
+            throw_on_cuda_error(cudaMemcpy(hptilde_host->data->data,hptilde,L_fCut*sizeof(COMPLEX16),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+            throw_on_cuda_error(cudaMemcpy(hctilde_host->data->data,hctilde,L_fCut*sizeof(COMPLEX16),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+            throw_on_cuda_error(cudaMemcpy(phis_host,               phis,   L_fCut*sizeof(REAL8),    cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);        
+        }
     }
 
     // Synchronise the device
     check_thread_sync(lalsimulation_cuda_exception::SYNC);
 
     // Unload the pinned output buffers
-    throw_on_cuda_error(cudaMemcpy(hptilde_host->data->data,hptilde_pinned,L_fCut*sizeof(COMPLEX16),cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
-    throw_on_cuda_error(cudaMemcpy(hctilde_host->data->data,hctilde_pinned,L_fCut*sizeof(COMPLEX16),cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
-    throw_on_cuda_error(cudaMemcpy(phis_host,               phis_pinned,   L_fCut*sizeof(REAL8),    cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
+    if(n_streams>0){
+        throw_on_cuda_error(cudaMemcpy(hptilde_host->data->data,hptilde_pinned,L_fCut*sizeof(COMPLEX16),cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
+        throw_on_cuda_error(cudaMemcpy(hctilde_host->data->data,hctilde_pinned,L_fCut*sizeof(COMPLEX16),cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
+        throw_on_cuda_error(cudaMemcpy(phis_host,               phis_pinned,   L_fCut*sizeof(REAL8),    cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
+    }
 
     // Shift index for frequency series if needed.  This wouldn't work in the
     // kernel due to async implementation, so it needs to be done here.
@@ -422,10 +520,10 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         if(freqs!=NULL)          throw_on_cuda_error(cudaFree(freqs),             lalsimulation_cuda_exception::FREE);
         for(i_stream=0;i_stream<n_streams_alloc;i_stream++)
            throw_on_cuda_error(cudaStreamDestroy(stream[i_stream]),lalsimulation_cuda_exception::STREAM_DESTROY);
-        free(stream_size);
-        free(stream_offset);
-        free(stream);
-        n_streams = 0;
+        if(stream_size   !=NULL) free(stream_size);
+        if(stream_offset !=NULL) free(stream_offset);
+        if(stream        !=NULL) free(stream);
+        n_streams       = 0;
         n_streams_alloc = 0;
     }
   }
@@ -542,11 +640,12 @@ __global__ void PhenomPCoreOneFrequency_cuda(
   }
 }
 #else
-void *XLALPhenomPCore_buffer(UINT4 L_fCut_max){
-    (void)L_fCut_max;
+void *XLALPhenomPCore_buffer(const UINT4 L_fCut_max,const INT4 n_streams){
+    (void)L_fCut_max; // to avoid a compiler warning
+    (void)n_streams;  // to avoid a compiler warning
 }
 void XLALfree_PhenomPCore_buffer(void *buf){
-    (void)(buf);
+    (void)(buf); // to avoid a compiler warning
 }
 #endif
 
