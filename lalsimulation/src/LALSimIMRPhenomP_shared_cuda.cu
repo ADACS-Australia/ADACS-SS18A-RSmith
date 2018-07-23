@@ -384,12 +384,15 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
 
     // Set the number of threads per block.  Profiling
     // has revealed that this kernel uses 72-registers.
-    // This number of threads is appropriate iin that
+    // This number of threads is appropriate in that
     // case for a P100.
     int n_threads=16;
 
     // Perform the GPU work in chunks using asynchronous streams
     if(n_streams>0){
+        // Load the pinned input buffer
+        throw_on_cuda_error(cudaMemcpy(freqs_pinned,freqs_host->data,L_fCut*sizeof(REAL8),cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
+
         UINT4 i_stream = 0;
         for(i_stream=0;i_stream<n_streams;i_stream++){
             // If we are using one-or-more stream(s), we need to
@@ -400,7 +403,6 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
             cudaStream_t stream_i        = stream[i_stream];
 
             // Perform host->device transfer (via the pinned array)
-            throw_on_cuda_error(cudaMemcpyAsync(&(freqs_pinned[stream_offset_i]),&(freqs_host->data[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyHostToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
             throw_on_cuda_error(cudaMemcpyAsync(&(freqs[stream_offset_i]),&(freqs_pinned[stream_offset_i]),stream_size_i*sizeof(REAL8),cudaMemcpyHostToDevice,stream_i),lalsimulation_cuda_exception::MEMCPY);
 
             // Run kernel
@@ -484,9 +486,6 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         throw_on_cuda_error(cudaMemcpy(phis_host,               phis,   L_fCut*sizeof(REAL8),    cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);        
     }
 
-    // Synchronise the device
-    //check_thread_sync(lalsimulation_cuda_exception::SYNC);
-
     // Shift index for frequency series if needed.  This wouldn't work in the
     // kernel due to async implementation, so it needs to be done here.
     if(offset!=0){
@@ -520,9 +519,9 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         UINT4 i_stream;
         for(i_stream=0;i_stream<n_streams_alloc;i_stream++)
            throw_on_cuda_error(cudaStreamDestroy(stream[i_stream]),lalsimulation_cuda_exception::STREAM_DESTROY);
-        if(stream_size   !=NULL) free(stream_size);
-        if(stream_offset !=NULL) free(stream_offset);
-        if(stream        !=NULL) free(stream);
+        if(stream_size  !=NULL) free(stream_size);
+        if(stream_offset!=NULL) free(stream_offset);
+        if(stream       !=NULL) free(stream);
         n_streams       = 0;
         n_streams_alloc = 0;
     }
