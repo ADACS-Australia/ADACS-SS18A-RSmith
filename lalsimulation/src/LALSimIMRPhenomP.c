@@ -918,7 +918,6 @@ int PhenomPCore(
      buf,
      &errcode);
 #else
-  (void)buf; // To avoid a compiler warning
   PhenomPCoreAllFrequencies_cpu(
      L_fCut,
      freqs,
@@ -945,6 +944,7 @@ int PhenomPCore(
      *hptilde,
      *hctilde,
      phis,
+     buf,
      &errcode);
 #endif
 
@@ -1045,12 +1045,14 @@ void PhenomPCoreAllFrequencies_cpu(UINT4 L_fCut,
         COMPLEX16FrequencySeries *hptilde,
         COMPLEX16FrequencySeries *hctilde,
         REAL8 *phis,
+        const void *buf,
         int   *errcode){
   /*
     We can't call XLAL_ERROR() directly with OpenMP on.
     Keep track of return codes for each thread and in addition use flush to get out of
     the parallel for loop as soon as possible if something went wrong in any thread.
   */
+  (void)buf; // To avoid a compiler warning
 #pragma omp parallel for
   for (UINT4 i=0; i<L_fCut; i++) { // loop over frequency points in sequence
     COMPLEX16 hp_val = 0.0;
