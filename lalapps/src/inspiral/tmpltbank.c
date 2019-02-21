@@ -319,6 +319,7 @@
 
 #ifdef LALAPPS_CUDA_ENABLED
 #include <cuda_runtime_api.h>
+#include <assert.h>
 #endif
 
 #include <lal/LALConfig.h>
@@ -1541,7 +1542,11 @@ cleanExit:
   LALCheckMemoryLeaks();
 
 #ifdef LALAPPS_CUDA_ENABLED
-  cudaThreadExit();
+  // This code is marked as depreciated:
+  // error: ‘cudaThreadExit’ is deprecated [-Werror=deprecated-declarations]
+  // so ... if you get here, fix this problem and remove the assert(0)
+  //cudaThreadExit();
+  assert(0);
 #endif
 
   exit( 0 );
