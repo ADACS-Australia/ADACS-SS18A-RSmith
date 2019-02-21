@@ -113,7 +113,14 @@ static void free_streams(UINT4 *n_streams_alloc,UINT4 *n_streams,cudaStream_t **
 
 // If n_streams_alloc==0, then a synchronous calculation will be performed.  Otherwise, the calculation
 // will be conducted with n_streams_alloc asynchronous streams.
-LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(const UINT4 L_fCut_max, const INT4 n_streams_alloc_in){
+LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(const UINT4 L_fCut_max, const INT4 n_streams_alloc_in, bool auto_offload){
+
+    PhenomPCore_buffer_info *buf = (PhenomPCore_buffer_info *)malloc(sizeof(PhenomPCore_buffer_info));
+
+    // This bool indicates whether results should be automatically offloaded after they are generated
+    // The user may not want to do this because they might want to do some on-device processing
+    // afterwards.  This saves the performance hit from an unnecessary device->host communication.
+    buf->auto_offload = auto_offload;
 
     // Set the number of streams that we will allocate.
     UINT4 n_streams_alloc = N_LALSIM_CUDA_STREAMS_DEFAULT;
@@ -122,7 +129,6 @@ LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(const UI
     else
         n_streams_alloc = n_streams_alloc_in;
 
-    PhenomPCore_buffer_info *buf = (PhenomPCore_buffer_info *)malloc(sizeof(PhenomPCore_buffer_info));
     buf->init=true;
     buf->L_fCut_alloc=L_fCut_max;
 
@@ -240,6 +246,11 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
   // correctly, so we do this trick instead (for now at least)
   PhenomPCore_buffer_info *buf = (PhenomPCore_buffer_info *)buf_in;
 
+  // Check if the results should be offloaded
+  bool offload = true;
+  if(buf!=NULL)
+     offload = buf->auto_offload;
+
   try{
 
     // Initialize streams
@@ -310,6 +321,8 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
         throw_on_cuda_error(cudaMalloc(&phis,   L_fCut*sizeof(REAL8)),    lalsimulation_cuda_exception::MALLOC);
     }
 
+    // ----------------------------------
+    // Copy input parameters host->device
     IMRPhenomDAmplitudeCoefficients *pAmp=NULL;
     if(pAmp_host!=NULL){
       if(buf!=NULL)
@@ -381,6 +394,7 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
           throw_on_cuda_error(cudaMalloc(&phi_prefactors,sizeof(PhiInsPrefactors)),lalsimulation_cuda_exception::MALLOC);
       throw_on_cuda_error(cudaMemcpy(phi_prefactors,phi_prefactors_host,sizeof(PhiInsPrefactors),cudaMemcpyHostToDevice),lalsimulation_cuda_exception::MEMCPY);
     }
+    // ----------------------------------
 
     // Set the number of threads per block.  Profiling
     // has revealed that this kernel uses 72-registers.
@@ -435,15 +449,19 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
                   phis)),lalsimulation_cuda_exception::KERNEL_PHENOMPCOREONEFREQUENCY);
 
             // Perform device->host transfer of results
-            throw_on_cuda_error(cudaMemcpyAsync(&(hptilde_pinned[stream_offset_i]),&(hptilde[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
-            throw_on_cuda_error(cudaMemcpyAsync(&(hctilde_pinned[stream_offset_i]),&(hctilde[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
-            throw_on_cuda_error(cudaMemcpyAsync(&(phis_pinned[stream_offset_i]),   &(phis[stream_offset_i]),   stream_size_i*sizeof(REAL8),    cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);        
+            if(offload){
+                throw_on_cuda_error(cudaMemcpyAsync(&(hptilde_pinned[stream_offset_i]),&(hptilde[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
+                throw_on_cuda_error(cudaMemcpyAsync(&(hctilde_pinned[stream_offset_i]),&(hctilde[stream_offset_i]),stream_size_i*sizeof(COMPLEX16),cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);
+                throw_on_cuda_error(cudaMemcpyAsync(&(phis_pinned[stream_offset_i]),   &(phis[stream_offset_i]),   stream_size_i*sizeof(REAL8),    cudaMemcpyDeviceToHost,stream_i),lalsimulation_cuda_exception::MEMCPY);        
+            }
         }
 
         // Unload the pinned output buffers
-        throw_on_cuda_error(cudaMemcpy(hptilde_host->data->data,hptilde_pinned,L_fCut*sizeof(COMPLEX16),cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
-        throw_on_cuda_error(cudaMemcpy(hctilde_host->data->data,hctilde_pinned,L_fCut*sizeof(COMPLEX16),cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
-        throw_on_cuda_error(cudaMemcpy(phis_host,               phis_pinned,   L_fCut*sizeof(REAL8),    cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
+        if(offload){
+            throw_on_cuda_error(cudaMemcpy(hptilde_host->data->data,hptilde_pinned,L_fCut*sizeof(COMPLEX16),cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
+            throw_on_cuda_error(cudaMemcpy(hctilde_host->data->data,hctilde_pinned,L_fCut*sizeof(COMPLEX16),cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
+            throw_on_cuda_error(cudaMemcpy(phis_host,               phis_pinned,   L_fCut*sizeof(REAL8),    cudaMemcpyHostToHost),lalsimulation_cuda_exception::MEMCPY);
+        }
 
     }
     // ... else, we can bypass the pinned arrays
@@ -481,9 +499,11 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
               phis)),lalsimulation_cuda_exception::KERNEL_PHENOMPCOREONEFREQUENCY);
 
         // Perform device->host transfer of results
-        throw_on_cuda_error(cudaMemcpy(hptilde_host->data->data,hptilde,L_fCut*sizeof(COMPLEX16),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
-        throw_on_cuda_error(cudaMemcpy(hctilde_host->data->data,hctilde,L_fCut*sizeof(COMPLEX16),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
-        throw_on_cuda_error(cudaMemcpy(phis_host,               phis,   L_fCut*sizeof(REAL8),    cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);        
+        if(offload){
+            throw_on_cuda_error(cudaMemcpy(hptilde_host->data->data,hptilde,L_fCut*sizeof(COMPLEX16),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+            throw_on_cuda_error(cudaMemcpy(hctilde_host->data->data,hctilde,L_fCut*sizeof(COMPLEX16),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+            throw_on_cuda_error(cudaMemcpy(phis_host,               phis,   L_fCut*sizeof(REAL8),    cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+        }
     }
 
     // Shift index for frequency series if needed.  This wouldn't work in the
