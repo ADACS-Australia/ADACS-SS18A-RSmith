@@ -146,6 +146,24 @@ LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(const UI
         throw_on_cuda_error(cudaHostAlloc(&(buf->hptilde_pinned),L_fCut_max*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
         throw_on_cuda_error(cudaHostAlloc(&(buf->phis_pinned),   L_fCut_max*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
     }
+    else{
+        buf->freqs_pinned   = NULL;
+        buf->hctilde_pinned = NULL;
+        buf->hptilde_pinned = NULL;
+        buf->phis_pinned    = NULL;
+    }
+
+    // Initialize offload arrays if auto-offload is off
+    if(!buf->auto_offload){
+        throw_on_cuda_error(cudaHostAlloc(&(buf->hctilde_offload),L_fCut_max*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaHostAlloc(&(buf->hptilde_offload),L_fCut_max*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+        throw_on_cuda_error(cudaHostAlloc(&(buf->phis_offload),   L_fCut_max*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+    }
+    else{
+        buf->hctilde_offload = NULL;
+        buf->hptilde_offload = NULL;
+        buf->phis_offload    = NULL;
+    }
 
     // Initialize device memory for input/output arrays
     throw_on_cuda_error(cudaMalloc(&(buf->freqs),  L_fCut_max*sizeof(REAL8)),    lalsimulation_cuda_exception::MALLOC);
@@ -209,7 +227,24 @@ LALSIMULATION_CUDA_HOST void XLALfree_PhenomPCore_buffer(PhenomPCore_buffer_info
             buf->pPhi          =NULL;
             buf->pAmp          =NULL;
             buf->freqs         =NULL;
-            buf->init=false;
+            buf->init          =false;
+        }
+    }
+}
+
+LALSIMULATION_CUDA_HOST void XLALoffload_PhenomPCore_buffer(PhenomPCore_buffer_info *buf){
+    if(buf!=NULL){
+        throw_on_cuda_error(cudaMemcpy(buf->hptilde_offload,buf->hptilde,buf->L_fCut_alloc*sizeof(COMPLEX16),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+        throw_on_cuda_error(cudaMemcpy(buf->hctilde_offload,buf->hctilde,buf->L_fCut_alloc*sizeof(COMPLEX16),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+        throw_on_cuda_error(cudaMemcpy(buf->phis_offload,   buf->phis,   buf->L_fCut_alloc*sizeof(REAL8),    cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+        if(buf->offset!=0){
+            INT4 j=buf->L_fCut-1;
+            INT4 i=j-buf->offset;
+            for(;i>=0;i--,j--){
+                buf->hptilde_offload[j]=buf->hptilde_offload[i];
+                buf->hctilde_offload[j]=buf->hctilde_offload[i];
+                buf->phis_offload[j]   =buf->phis_offload[i];
+            }
         }
     }
 }
@@ -291,6 +326,9 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
             printf("Error: buf->L_fCut_alloc<L_fCut (ie %d<%d).",buf->L_fCut_alloc,L_fCut);
             exit(1);
         }
+
+        // Store the L_fCut used for this call in the buffer
+        buf->L_fCut=L_fCut;
 
         // Fetch pointers from buffer
         if(n_streams>0){
@@ -508,13 +546,17 @@ void PhenomPCoreAllFrequencies_cuda(UINT4 L_fCut,
 
     // Shift index for frequency series if needed.  This wouldn't work in the
     // kernel due to async implementation, so it needs to be done here.
-    if(offset!=0){
-        INT4 j=L_fCut-1;
-        INT4 i=j-offset;
-        for(;i>=0;i--,j--){
-            hptilde_host->data->data[j]=hptilde_host->data->data[i];
-            hctilde_host->data->data[j]=hctilde_host->data->data[i];
-            phis_host[j]               =phis_host[i];
+    if(buf!=NULL)
+        buf->offset=offset;
+    if(offload){
+        if(offset!=0){
+            INT4 j=L_fCut-1;
+            INT4 i=j-offset;
+            for(;i>=0;i--,j--){
+                hptilde_host->data->data[j]=hptilde_host->data->data[i];
+                hctilde_host->data->data[j]=hctilde_host->data->data[i];
+                phis_host[j]               =phis_host[i];
+            }
         }
     }
 

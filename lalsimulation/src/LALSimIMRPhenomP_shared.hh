@@ -34,6 +34,7 @@ extern "C" {
 #if !defined(LALSIMULATION_CUDA_ENABLED)
 void *XLALPhenomPCore_buffer(const UINT4 L_fCut_max,const INT4 n_streams,bool auto_offload);
 void XLALfree_PhenomPCore_buffer(void *buf);
+void XLALoffload_PhenomPCore_buffer(PhenomPCore_buffer_info *buf);
 #else
 #include <cuda_runtime.h>
 typedef struct tagPhenomPCore_buffer_info{
@@ -47,6 +48,9 @@ typedef struct tagPhenomPCore_buffer_info{
    COMPLEX16 *hctilde_pinned;
    COMPLEX16 *hptilde_pinned;
    REAL8     *phis_pinned;
+   COMPLEX16 *hctilde_offload;
+   COMPLEX16 *hptilde_offload;
+   REAL8     *phis_offload;
    IMRPhenomDAmplitudeCoefficients  *pAmp;
    IMRPhenomDPhaseCoefficients      *pPhi;
    BBHPhenomCParams                 *PCparams;
@@ -55,7 +59,9 @@ typedef struct tagPhenomPCore_buffer_info{
    SpinWeightedSphericalHarmonic_l2 *Y2m;
    AmpInsPrefactors                 *amp_prefactors;
    PhiInsPrefactors                 *phi_prefactors;
+   UINT4         L_fCut;
    UINT4         L_fCut_alloc;
+   UINT4         offset;
    UINT4         n_streams;
    UINT4         n_streams_alloc;
    cudaStream_t *stream;
@@ -64,6 +70,7 @@ typedef struct tagPhenomPCore_buffer_info{
 } PhenomPCore_buffer_info;
 LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(const UINT4 L_fCut_max,const INT4 n_streams,bool auto_offload);
 LALSIMULATION_CUDA_HOST void XLALfree_PhenomPCore_buffer(PhenomPCore_buffer_info *buf);
+LALSIMULATION_CUDA_HOST void XLALoffload_PhenomPCore_buffer(PhenomPCore_buffer_info *buf);
 #endif
 
 #if defined(LALSIMULATION_CUDA_ENABLED)
