@@ -113,7 +113,7 @@ static void free_streams(UINT4 *n_streams_alloc,UINT4 *n_streams,cudaStream_t **
 
 // If n_streams_alloc==0, then a synchronous calculation will be performed.  Otherwise, the calculation
 // will be conducted with n_streams_alloc asynchronous streams.
-LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(const UINT4 L_fCut_max, const INT4 n_streams_alloc_in, bool auto_offload){
+LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(const UINT4 L_fCut_max, const INT4 n_streams_alloc_in, const bool auto_offload){
 
     PhenomPCore_buffer_info *buf = (PhenomPCore_buffer_info *)malloc(sizeof(PhenomPCore_buffer_info));
 
@@ -129,8 +129,9 @@ LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(const UI
     else
         n_streams_alloc = n_streams_alloc_in;
 
-    buf->init=true;
+    buf->init        =true;
     buf->L_fCut_alloc=L_fCut_max;
+    buf->offset      =0;
 
     // Establish a device context
     throw_on_cuda_error(cudaFree(0),lalsimulation_cuda_exception::INIT);
@@ -202,6 +203,16 @@ LALSIMULATION_CUDA_HOST void XLALfree_PhenomPCore_buffer(PhenomPCore_buffer_info
                 buf->hptilde_pinned=NULL;
                 buf->hctilde_pinned=NULL;
                 buf->phis_pinned   =NULL;
+            }
+            if(!buf->auto_offload){
+                throw_on_cuda_error(cudaFreeHost(buf->hctilde_offload),lalsimulation_cuda_exception::FREE);
+                throw_on_cuda_error(cudaFreeHost(buf->hptilde_offload),lalsimulation_cuda_exception::FREE);
+                throw_on_cuda_error(cudaFreeHost(buf->phis_offload),   lalsimulation_cuda_exception::FREE);
+            }
+            else{
+                buf->hctilde_offload=NULL;
+                buf->hptilde_offload=NULL;
+                buf->phis_offload   =NULL;
             }
             throw_on_cuda_error(cudaFree(buf->phis),              lalsimulation_cuda_exception::FREE);
             throw_on_cuda_error(cudaFree(buf->hctilde),           lalsimulation_cuda_exception::FREE);
