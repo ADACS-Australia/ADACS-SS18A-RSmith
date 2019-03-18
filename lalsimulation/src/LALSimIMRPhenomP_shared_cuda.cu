@@ -156,9 +156,13 @@ LALSIMULATION_CUDA_HOST PhenomPCore_buffer_info *XLALPhenomPCore_buffer(const UI
 
     // Initialize offload arrays if auto-offload is off
     if(!buf->auto_offload){
-        throw_on_cuda_error(cudaHostAlloc(&(buf->hctilde_offload),L_fCut_max*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
-        throw_on_cuda_error(cudaHostAlloc(&(buf->hptilde_offload),L_fCut_max*sizeof(COMPLEX16),cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
-        throw_on_cuda_error(cudaHostAlloc(&(buf->phis_offload),   L_fCut_max*sizeof(REAL8),    cudaHostAllocDefault),lalsimulation_cuda_exception::MALLOC);
+        // This is a bit of an ugly kludge; no error checking and use of XLALCreate...FrequencySeries is overkill
+        // ... however, it's what I had to do to get the SWIG wrappers to yeild an object that could be accessed by Python
+        // Ideally, we would just use COMPLEX16 and REAL8 arrays
+        LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; 
+        buf->hptilde_offload = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &ligotimegps_zero, 0.0, 0., &lalStrainUnit, L_fCut_max);
+        buf->hctilde_offload = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &ligotimegps_zero, 0.0, 0., &lalStrainUnit, L_fCut_max);
+        buf->phis_offload    = XLALCreateREAL8FrequencySeries    ("phi: FD waveform",     &ligotimegps_zero, 0.0, 0., &lalStrainUnit, L_fCut_max);
     }
     else{
         buf->hctilde_offload = NULL;
@@ -204,10 +208,11 @@ LALSIMULATION_CUDA_HOST void XLALfree_PhenomPCore_buffer(PhenomPCore_buffer_info
                 buf->hctilde_pinned=NULL;
                 buf->phis_pinned   =NULL;
             }
+            // Free offload arrays
             if(!buf->auto_offload){
-                throw_on_cuda_error(cudaFreeHost(buf->hctilde_offload),lalsimulation_cuda_exception::FREE);
-                throw_on_cuda_error(cudaFreeHost(buf->hptilde_offload),lalsimulation_cuda_exception::FREE);
-                throw_on_cuda_error(cudaFreeHost(buf->phis_offload),   lalsimulation_cuda_exception::FREE);
+                XLALDestroyCOMPLEX16FrequencySeries(buf->hptilde_offload);
+                XLALDestroyCOMPLEX16FrequencySeries(buf->hctilde_offload);
+                XLALDestroyREAL8FrequencySeries(buf->phis_offload);
             }
             else{
                 buf->hctilde_offload=NULL;
@@ -245,16 +250,16 @@ LALSIMULATION_CUDA_HOST void XLALfree_PhenomPCore_buffer(PhenomPCore_buffer_info
 
 LALSIMULATION_CUDA_HOST void XLALoffload_PhenomPCore_buffer(PhenomPCore_buffer_info *buf){
     if(buf!=NULL){
-        throw_on_cuda_error(cudaMemcpy(buf->hptilde_offload,buf->hptilde,buf->L_fCut_alloc*sizeof(COMPLEX16),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
-        throw_on_cuda_error(cudaMemcpy(buf->hctilde_offload,buf->hctilde,buf->L_fCut_alloc*sizeof(COMPLEX16),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
-        throw_on_cuda_error(cudaMemcpy(buf->phis_offload,   buf->phis,   buf->L_fCut_alloc*sizeof(REAL8),    cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+        throw_on_cuda_error(cudaMemcpy(buf->hptilde_offload->data->data,buf->hptilde,buf->L_fCut_alloc*sizeof(COMPLEX16),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+        throw_on_cuda_error(cudaMemcpy(buf->hctilde_offload->data->data,buf->hctilde,buf->L_fCut_alloc*sizeof(COMPLEX16),cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
+        throw_on_cuda_error(cudaMemcpy(buf->phis_offload->data->data,   buf->phis,   buf->L_fCut_alloc*sizeof(REAL8),    cudaMemcpyDeviceToHost),lalsimulation_cuda_exception::MEMCPY);
         if(buf->offset!=0){
             INT4 j=buf->L_fCut-1;
             INT4 i=j-buf->offset;
             for(;i>=0;i--,j--){
-                buf->hptilde_offload[j]=buf->hptilde_offload[i];
-                buf->hctilde_offload[j]=buf->hctilde_offload[i];
-                buf->phis_offload[j]   =buf->phis_offload[i];
+                buf->hptilde_offload->data->data[j]=buf->hptilde_offload->data->data[i];
+                buf->hctilde_offload->data->data[j]=buf->hctilde_offload->data->data[i];
+                buf->phis_offload->data[j]         =buf->phis_offload->data[i];
             }
         }
     }

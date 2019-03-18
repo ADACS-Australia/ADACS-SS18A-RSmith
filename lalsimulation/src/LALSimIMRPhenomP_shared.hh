@@ -48,9 +48,9 @@ typedef struct tagPhenomPCore_buffer_info{
    COMPLEX16 *hctilde_pinned;
    COMPLEX16 *hptilde_pinned;
    REAL8     *phis_pinned;
-   COMPLEX16 *hctilde_offload;
-   COMPLEX16 *hptilde_offload;
-   REAL8     *phis_offload;
+   COMPLEX16FrequencySeries *hctilde_offload;
+   COMPLEX16FrequencySeries *hptilde_offload;
+   REAL8FrequencySeries     *phis_offload;
    IMRPhenomDAmplitudeCoefficients  *pAmp;
    IMRPhenomDPhaseCoefficients      *pPhi;
    BBHPhenomCParams                 *PCparams;
